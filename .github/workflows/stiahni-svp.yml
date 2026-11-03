@@ -1,0 +1,25 @@
+name: Stiahni ŠVP
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  stiahni:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Nainštaluj pdftotext
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Stiahni dokumenty
+        run: node scripts/stiahni-svp.mjs
+      - name: Ulož výsledok do repozitára
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add svp
+          git diff --staged --quiet || git commit -m "Dokumenty ŠVP"
+          git push
