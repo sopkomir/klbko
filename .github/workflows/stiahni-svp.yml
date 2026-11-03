@@ -9,6 +9,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -16,10 +18,18 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Stiahni dokumenty
         run: node scripts/stiahni-svp.mjs
-      - name: Ulož výsledok do repozitára
+      - name: Ulož PDF ako prílohu behu
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: svp-pdf
+          path: svp/pdf
+          retention-days: 30
+      - name: Ulož texty do repozitára po dávkach
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add svp
-          git diff --staged --quiet || git commit -m "Dokumenty ŠVP"
+          git add svp/manifest.json
+          git diff --staged --quiet || git commit -m "Zoznam dokumentov ŠVP"
           git push
+          find svp/text -type f -print0 | sort -z | xargs -0 -n 40 sh -c 'git add "$@" && (git diff --staged --quiet || git commit -q -m "Texty ŠVP") && git push -q' sh
