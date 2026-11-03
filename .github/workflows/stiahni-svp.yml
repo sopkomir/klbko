@@ -25,11 +25,10 @@ jobs:
           name: svp-pdf
           path: svp/pdf
           retention-days: 30
-      - name: Ulož texty do repozitára po dávkach
+      - name: Zverejni balík dokumentov
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add svp/manifest.json
-          git diff --staged --quiet || git commit -m "Zoznam dokumentov ŠVP"
-          git push
-          find svp/text -type f -print0 | sort -z | xargs -0 -n 40 sh -c 'git add "$@" && (git diff --staged --quiet || git commit -q -m "Texty ŠVP") && git push -q' sh
+          tar -czf svp-dokumenty.tar.gz svp
+          ls -lh svp-dokumenty.tar.gz
+          gh release create "svp-${{ github.run_number }}" svp-dokumenty.tar.gz --title "Dokumenty ŠVP" --notes "Stiahnuté oficiálne dokumenty a ich text." --target "${{ github.sha }}"
