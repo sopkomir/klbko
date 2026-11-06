@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { askJson, NoProvider } from '@/lib/ai';
+import { createHash } from 'node:crypto';
+import { AiError, askJson } from '@/lib/ai';
+import { hasStore, load, save } from '@/lib/store';
 import { byIds, find, type Program } from '@/lib/svp';
 import { FORMS, KIND, formPrompt, guidePrompt, topicPrompt, validForm, type Q } from '@/lib/prompts';
 
@@ -7,6 +9,16 @@ export const maxDuration = 60;
 const hits = new Map<string, { day: string; n: number }>();
 const cache = new Map<string, unknown>();
 const bad = (m: string, s = 400) => NextResponse.json({ error: m }, { status: s });
+const COPY: Record<string, [string, number]> = {
+  nokey: ['Aplikácia nemá nastavený kľúč k AI.', 503],
+  key: ['Kľúč k AI je neplatný alebo nemá povolenie. Skontrolujte ho vo Verceli.', 502],
+  limit: ['Bezplatný limit AI je na chvíľu vyčerpaný. Skúste to o minútu.', 429],
+  credit: ['Záložná AI nemá kredit a hlavná práve neodpovedá. Skúste to o minútu.', 402],
+  timeout: ['AI odpovedala príliš dlho. Skúste to ešte raz.', 504],
+  model: ['Model AI odmietol požiadavku. Treba upraviť nastavenie modelu.', 502],
+  invalid: ['AI vrátila neúplný výsledok. Skúste to ešte raz.', 502],
+  down: ['AI je teraz nedostupná. Skúste to o chvíľu.', 502],
+};
 
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => null);
@@ -16,6 +28,11 @@ export async function POST(req: NextRequest) {
   if (type === 'form' && !FORMS.includes(String(q.form))) return bad('Neznáma podoba.');
   const key = JSON.stringify([type, title.toLowerCase(), subject, grade, q.form, q.notes]);
   if (cache.has(key)) return NextResponse.json(cache.get(key));
+  const shared = !q.notes && hasStore() ? 'cache/' + createHash('sha256').update(key).digest('hex').slice(0, 32) + '.json' : null;
+  if (shared) {
+    const hit = await load(shared);
+    if (hit) { cache.set(key, hit); return NextResponse.json(hit); }
+  }
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0] ?? 'local', day = new Date().toISOString().slice(0, 10);
   const u = hits.get(ip);
   const n = u?.day === day ? u.n : 0;
@@ -24,7 +41,7 @@ export async function POST(req: NextRequest) {
   try {
     let out: unknown;
     if (type === 'topic') {
-      const cands = (['2023', '2015'] as Program[]).flatMap(program => find({ title, subject, grade, program, notes: q.notes }, 30).items);
+      const cands = (['2023', '2015'] as Program[]).flatMap(program => find({ title, subject, grade, program, notes: q.notes }, 15).items);
       const { value: v, provider } = await askJson(topicPrompt(q, cands), x => !!KIND[x?.kind] && validForm(KIND[x.kind], x.data));
       const allowed = new Set(cands.map(c => c.id));
       out = { provider, kind: v.kind, why: String(v.why ?? ''), form: KIND[v.kind], data: v.data,
@@ -39,10 +56,12 @@ export async function POST(req: NextRequest) {
     }
     if (cache.size > 300) cache.clear();
     cache.set(key, out);
+    if (shared) await save(shared, JSON.stringify(out)).catch(e => console.error(e));
     return NextResponse.json(out);
   } catch (e) {
-    if (e instanceof NoProvider) return bad('Aplikácia ešte nemá nastavený kľúč k AI.', 503);
+    const code = e instanceof AiError ? e.code : 'down';
     console.error(e);
-    return bad('AI teraz nevie odpovedať. Skúste to o chvíľu.', 502);
+    const [msg, status] = COPY[code] ?? COPY.down;
+    return NextResponse.json({ error: msg, code }, { status });
   }
 }

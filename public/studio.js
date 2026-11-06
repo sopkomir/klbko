@@ -339,7 +339,7 @@ function guideBoxes(g){const it=(l,hue)=>el('div',{class:'g-list'},l.map(([a,b])
   qa:el('div',{class:'g-box'},el('h3',{},'Keď sa žiaci opýtajú'),it(g.qa,3))}}
 function paintGuide(){const p=$('#guide'),g=S.topic.guide;
  const head=[el('h2',{},'Sprievodca hodinou'),el('p',{},'Všetko, čo potrebujete vedieť a povedať, aj keď tento predmet neučíte každý deň.')];
- if(!g){p.replaceChildren(...head,sample?el('button',{class:'btn main',type:'button',style:'justify-self:start',onclick:genGuide},'Pripraviť sprievodcu cez AI'):el('p',{class:'warn'},'Sprievodcu pripraví AI.'));return}
+ if(!g){p.replaceChildren(...head,sample?el('button',{class:'btn main',type:'button',style:'justify-self:start',onclick:()=>genGuide()},'Pripraviť sprievodcu cez AI'):el('p',{class:'warn'},'Sprievodcu pripraví AI.'));return}
  const b=guideBoxes(g);p.replaceChildren(...head,el('div',{class:'g-grid'},el('div',{class:'g-col'},b.primer,b.steps),el('div',{class:'g-col'},b.traps,b.qa)))}
 function paintAll(){paintBrief();paintRail();paintLevels();paintCanvas();paintGuide();paintWhy();paintSvp()}
 
@@ -398,20 +398,20 @@ const sample=true;
 function setStatus(t,err,stop){const s=$('#status');s.hidden=!t;s.className='status'+(err?' err':'');s.replaceChildren(t||'');if(stop)s.append(stop)}
 function errCopy(c){return({not_granted:'Bez povolenia sa vlastná téma nedá spracovať. Vyberte niektorú z pripravených tém.',sampling_disabled:'AI nie je pre tento účet dostupná.',rate_limited:'Dosiahli ste limit používania. Skúste to o chvíľu.',session_expired:'Prihláste sa znova a skúste to ešte raz.',refused:'Túto tému sa nepodarilo spracovať. Skúste ju sformulovať inak.',invalid_json:'Výsledok sa nepodaril. Stlačte Pripraviť pomôcku ešte raz.'})[c]||'Spojenie zlyhalo. Skúste to ešte raz.'}
 const http=(u,o)=>fetch(u,o).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||'Chyba'),{user:j.error});return j});
-async function ask(body,onOk){
+async function ask(body,onOk,quiet){
  const ctl=new AbortController();const stop=el('button',{class:'btn',type:'button',onclick:()=>ctl.abort()},'Zastaviť');
- setStatus('AI pripravuje materiál, zvyčajne to trvá do minúty. ',false,stop);$('#goBtn').disabled=true;
+ setStatus(quiet?'Dopĺňam Sprievodcu hodinou. ':'AI pripravuje materiál, zvyčajne to trvá do minúty. ',false,stop);$('#goBtn').disabled=true;
  try{onOk(await http('/api/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:ctl.signal}));setStatus('')}
- catch(e){setStatus(e.name==='AbortError'?'':(e.user||'Spojenie zlyhalo. Skúste to ešte raz.'),true)}
+ catch(e){setStatus(e.name==='AbortError'?'':(quiet?'Sprievodcu sa teraz nepodarilo pripraviť. Pomôcka je hotová, skúste ho o chvíľu.':(e.user||'Spojenie zlyhalo. Skúste to ešte raz.')),true)}
  finally{$('#goBtn').disabled=false}
 }
 const base=()=>({title:S.topic.title,subject:S.topic.subject,grade:S.topic.grade,notes:S.topic.notes||''});
 function genTopic(title,subject,grade,notes){
  ask({type:'topic',title,subject,grade,notes},v=>{const f=v.form;if(f==='timeline'&&subject==='Dejepis')v.data.scene='morava';
   const t={title,subject,grade,notes,kind:v.kind,why:{[f]:v.why},alts:v.alts,picked:v.standards,method:null,forms:{[f]:v.data}};
-  S.key='vlastna';S.topic=t;S.form=recOf(t);if(!t.forms[S.form])S.form=f;paintAll();setTimeout(()=>{if(!t.guide)genGuide()},0)});
+  S.key='vlastna';S.topic=t;S.form=recOf(t);if(!t.forms[S.form])S.form=f;paintAll();setTimeout(()=>{if(!t.guide)genGuide(true)},0)});
 }
-function genGuide(){const t=S.topic;ask({...base(),type:'guide'},v=>{t.guide=v.guide;paintGuide()})}
+function genGuide(q){const t=S.topic;ask({...base(),type:'guide'},v=>{t.guide=v.guide;if(S.topic===t)paintGuide()},q===true)}
 function genForm(form){const t=S.topic;ask({...base(),type:'form',form},v=>{if(form==='timeline'&&t.subject==='Dejepis')v.data.scene='morava';t.forms[form]=v.data;if(S.form===form)paintAll()})}
 
 /* ---------- zdieľanie so žiakmi ---------- */
@@ -443,8 +443,8 @@ function loadTopic(k){S.key=k;S.topic=TOPICS[k];S.form=recOf(S.topic);if(!S.topi
  $('#hideBtn').addEventListener('click',()=>{S.hide=!S.hide;paintLevels();paintCanvas()});
  $('#fGoal').addEventListener('change',e=>{S.goal=e.target.value;const r=recOf(S.topic);if(S.topic.forms[r])S.form=r;paintAll()});
  $('#briefForm').addEventListener('submit',e=>{e.preventDefault();const title=$('#fTopic').value.trim();if(!title){setStatus('Napíšte tému.',true);return}
-  const k=Object.keys(TOPICS).find(k=>TOPICS[k].title.toLowerCase()===title.toLowerCase());if(k){loadTopic(k);return}
-  genTopic(title,$('#fSubject').value,Number($('#fGrade').value),$('#fNotes').value)});
+  const subj=$('#fSubject').value,gr=Number($('#fGrade').value),k=Object.keys(TOPICS).find(k=>TOPICS[k].title.toLowerCase()===title.toLowerCase()&&TOPICS[k].subject===subj&&TOPICS[k].grade===gr);if(k){loadTopic(k);return}
+  genTopic(title,subj,gr,$('#fNotes').value)});
  let rw;window.addEventListener('resize',()=>{cancelAnimationFrame(rw);rw=requestAnimationFrame(()=>{if(!$('#ovRoot').firstChild&&S.form==='cycle')paintCanvas()})});
  if(!window.KLBKO_SHARE)paintAll();
  if(window.KLBKO_SHARE)loadShare();
