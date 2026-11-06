@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { AiError, askJson } from '@/lib/ai';
 import { hasStore, load, save } from '@/lib/store';
 import { byIds, find, type Program } from '@/lib/svp';
-import { FORMS, KIND, formPrompt, guidePrompt, topicPrompt, validForm, type Q } from '@/lib/prompts';
+import { FORMS, KIND, cleanForm, cleanTopic, formPrompt, guidePrompt, topicPrompt, type Q } from '@/lib/prompts';
 
 export const maxDuration = 60;
 const hits = new Map<string, { day: string; n: number }>();
@@ -42,14 +42,16 @@ export async function POST(req: NextRequest) {
     let out: unknown;
     if (type === 'topic') {
       const cands = (['2023', '2015'] as Program[]).flatMap(program => find({ title, subject, grade, program, notes: q.notes }, 15).items);
-      const { value: v, provider } = await askJson(topicPrompt(q, cands), x => !!KIND[x?.kind] && validForm(KIND[x.kind], x.data));
+      const { value: v, provider } = await askJson(topicPrompt(q, cands), x => !!cleanTopic(x));
       const allowed = new Set(cands.map(c => c.id));
-      out = { provider, kind: v.kind, why: String(v.why ?? ''), form: KIND[v.kind], data: v.data,
+      const c = cleanTopic(v)!;
+      const kind = Object.keys(KIND).find(k => KIND[k] === c.form) ?? 'pojmy';
+      out = { provider, kind, why: String(v.why ?? ''), form: c.form, data: c.data,
         alts: (Array.isArray(v.alts) ? v.alts : []).filter((a: string[]) => FORMS.includes(a?.[0])).map((a: string[]) => [a[0], String(a[1])]),
         standards: byIds((v.standards ?? []).filter((i: string) => allowed.has(i))) };
     } else if (type === 'form') {
-      const { value, provider } = await askJson(formPrompt(q), x => validForm(q.form!, x));
-      out = { provider, data: value };
+      const { value, provider } = await askJson(formPrompt(q), x => !!cleanForm(q.form, x));
+      out = { provider, data: cleanForm(q.form, value)!.data };
     } else {
       const { value, provider } = await askJson(guidePrompt(q), x => !!x?.primer && x.steps?.length > 0 && x.traps?.length > 0);
       out = { provider, guide: { primer: String(value.primer), steps: value.steps, traps: value.traps, qa: value.qa ?? [] } };

@@ -8,8 +8,8 @@ type Attempt = { name: string; run: (prompt: string, ms: number) => Promise<stri
 const list = (s: string | undefined) => (s ?? '').split(',').map(x => x.trim()).filter(Boolean);
 const classify = (who: string, status: number, body: string): AiError => {
   const b = body.toLowerCase();
-  if (status === 402 || /credit|spending limit|billing|prepayment/.test(b)) return new AiError('credit', `${who}: chýba kredit (${status})`);
   if (status === 429) return new AiError('limit', `${who}: limit (${status})`);
+  if (status === 402 || /credit|spending limit|prepayment/.test(b)) return new AiError('credit', `${who}: chýba kredit (${status})`);
   if (status === 401 || status === 403 || /api key|api_key/.test(b)) return new AiError('key', `${who}: neplatný kľúč (${status})`);
   if (status === 400 || status === 404) return new AiError('model', `${who}: model alebo požiadavka (${status}) ${body.slice(0, 160)}`);
   return new AiError('down', `${who}: HTTP ${status}`);
@@ -80,7 +80,7 @@ const parse = (t: string) => {
   const s = t.trim().replace(/^```(?:json)?\s*|\s*```$/g, '');
   try { return JSON.parse(s); } catch { return JSON.parse(s.slice(s.search(/[{[]/), Math.max(s.lastIndexOf('}'), s.lastIndexOf(']')) + 1)); }
 };
-const ORDER: Code[] = ['limit', 'timeout', 'credit', 'key', 'model', 'invalid', 'down'];
+const ORDER: Code[] = ['limit', 'timeout', 'invalid', 'credit', 'key', 'model', 'down'];
 export async function askJson(prompt: string, valid: (v: any) => boolean): Promise<{ value: any; provider: string }> {
   const errs: AiError[] = [];
   const chain: Attempt[] = [];
@@ -101,7 +101,7 @@ export async function askJson(prompt: string, valid: (v: any) => boolean): Promi
     try {
       const value = parse(await a.run(prompt, Math.min(STEP, left)));
       if (valid(value)) return { value, provider: a.name };
-      errs.push(new AiError('invalid', a.name + ': neplatný tvar'));
+      errs.push(new AiError('invalid', `${a.name}: neplatný tvar, kľúče ${JSON.stringify(Object.keys(value ?? {}).slice(0, 8))}, data ${JSON.stringify(Object.keys(value?.data ?? {}).slice(0, 8))}`));
     } catch (e) {
       errs.push(e instanceof AiError ? e : new AiError('invalid', `${a.name}: ${(e as Error).message}`));
       if (e instanceof AiError && e.code === 'key' && a.name.startsWith('gemini')) {

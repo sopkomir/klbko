@@ -23,24 +23,38 @@ export const topicPrompt = (q: Q, s: Standard[]) => `${head(q)}
 ${list(s)}
 Vyber id štandardov, ktoré téma naozaj pokrýva, a obsah pomôcky postav na nich. Ak nesedí žiadny, vráť prázdny zoznam. Znenie štandardov nikdy nepíš ani neupravuj, vráť len id.
 Urč typ učiva a podobu: pojmy→mind, chrono→timeline, porovnanie→venn, pricina→fish, proces→cycle, hierarchia→tree.
-Odpovedz len JSON objektom: {"kind":"pojmy|chrono|porovnanie|pricina|proces|hierarchia","why":"dve vety pre učiteľa, prečo práve táto podoba","alts":[["id podoby","kedy by bola lepšia"]],"standards":["S1"],"data":obsah zvolenej podoby}
+Odpovedz len JSON objektom: {"kind":"jedna hodnota z pojmy, chrono, porovnanie, pricina, proces, hierarchia","why":"dve vety pre učiteľa, prečo práve táto podoba","alts":[["id podoby","kedy by bola lepšia"]],"standards":["S1"],"data":objekt presne v tvare zvolenej podoby}
+Do "data" vlož priamo polia podoby, napríklad pri mind {"center":"...","branches":[...]}, bez ďalšieho obalu.
 ${SCHEMA}`;
 export const formPrompt = (q: Q) => `${head(q)}\nPriprav pomôcku v podobe ${q.form}. Odpovedz len JSON hodnotou tvaru podoby ${q.form}.\n${SCHEMA}`;
 export const guidePrompt = (q: Q) => `${head(q)}
 Pomáhaš kolegovi, ktorý tento predmet nevyštudoval. Hodina má 45 minút.
 Odpovedz len JSON objektom: {"primer":"3 vety, ktoré učiteľovi vysvetlia podstatu","steps":[{"time":"5 min","do":"čo urobiť","say":"veta, ktorú môže povedať (len pri prvých dvoch krokoch)","check":"ako overí, že to žiaci chápu"}] (4 kroky, aspoň v dvoch pracujú žiaci),"traps":[["častý omyl žiakov","ako to je správne"]] (3),"qa":[["otázka žiaka","jednoduchá odpoveď"]] (2)}`;
-export function validForm(f: string, v: any): boolean {
-  try {
-    switch (f) {
-      case 'mind': return v.branches.length > 0;
-      case 'timeline': return v.events.length > 0;
-      case 'cycle': return v.steps.length > 0;
-      case 'venn': return Array.isArray(v.left) && Array.isArray(v.right);
-      case 'ttable': return v.rows.length > 0;
-      case 'fish': return v.groups.length > 0;
-      case 'tree': return Array.isArray(v.root.kids);
-      case 'vvn': return Array.isArray(v.know);
-      default: return Array.isArray(v) && v.length > 0;
-    }
-  } catch { return false; }
+const SHAPE: [string, (v: any) => boolean][] = [
+  ['mind', v => Array.isArray(v?.branches)], ['timeline', v => Array.isArray(v?.events)], ['cycle', v => Array.isArray(v?.steps)],
+  ['venn', v => Array.isArray(v?.left) || Array.isArray(v?.right)], ['ttable', v => Array.isArray(v?.rows)], ['fish', v => Array.isArray(v?.groups)],
+  ['tree', v => !!v?.root || Array.isArray(v?.kids)], ['vvn', v => Array.isArray(v?.know)],
+  ['quiz', v => Array.isArray(v) && Array.isArray(v[0]?.o)], ['cards', v => Array.isArray(v) && !!v[0]?.q],
+];
+const shapeOf = (v: any) => SHAPE.find(([, t]) => t(v))?.[0];
+/** Rozbalí obal okolo obsahu a doplní prázdne časti, aby sa pomôcka dala vykresliť. */
+export function cleanForm(f: string | undefined, input: any): { form: string; data: any } | null {
+  let v = input;
+  for (let i = 0; i < 3 && v && typeof v === 'object' && !Array.isArray(v) && !shapeOf(v); i++) {
+    const k = Object.keys(v).find(x => FORMS.includes(x)) ?? Object.keys(v).find(x => ['data', 'content', 'obsah', 'questions', 'cards', 'quiz'].includes(x)) ?? (Object.keys(v).length === 1 ? Object.keys(v)[0] : undefined);
+    if (!k) break;
+    v = v[k];
+  }
+  const form = shapeOf(v);
+  if (!form || (f && f !== form && !(['cards', 'quiz'].includes(f) && ['cards', 'quiz'].includes(form)))) return null;
+  if (form === 'tree' && !v.root) v = { root: v };
+  if (form === 'tree') v.root.kids = v.root.kids ?? [];
+  if (form === 'venn') v = { ...v, left: v.left ?? [], mid: v.mid ?? [], right: v.right ?? [] };
+  if (form === 'vvn') v = { know: v.know ?? [], want: v.want ?? [], learned: v.learned ?? [] };
+  if (form === 'ttable') v = { ...v, rows: v.rows.filter((r: unknown) => Array.isArray(r) && r.length >= 2) };
+  const size = Array.isArray(v) ? v.length : (v.branches ?? v.events ?? v.steps ?? v.groups ?? v.rows ?? v.root?.kids ?? v.left ?? v.know ?? []).length;
+  return size > 0 ? { form, data: v } : null;
+}
+export function cleanTopic(x: any): { form: string; data: any } | null {
+  return cleanForm(undefined, x?.data ?? x);
 }
