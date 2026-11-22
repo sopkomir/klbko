@@ -165,11 +165,11 @@ const txt=(i,lv)=>{i=norm(i);return lv===4?(i.e||i.t):i.t};
 function threads(host,links,o={}){
  let svg=host.querySelector(':scope>.threads');
  if(!svg){svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','threads');svg.setAttribute('aria-hidden','true');host.prepend(svg)}
- const hr=host.getBoundingClientRect();if(!hr.width)return;
+ const H=host.getBoundingClientRect();if(!H.width)return;const k=host.offsetWidth/H.width||1,sc=r=>({left:r.left*k,top:r.top*k,width:r.width*k,height:r.height*k}),hr=sc(H);
  let out='';
  for(const[a,b,mode,color]of links){const hue=color?` style="stroke:${color}"`:'';
   if(!a||!b||a.classList.contains('veil')||b.classList.contains('veil'))continue;
-  const A=a.getBoundingClientRect(),B=b.getBoundingClientRect();
+  const A=sc(a.getBoundingClientRect()),B=sc(b.getBoundingClientRect());
   const ax=A.left-hr.left,ay=A.top-hr.top,bx=B.left-hr.left,by=B.top-hr.top;
   const ac=[ax+A.width/2,ay+A.height/2],bc=[bx+B.width/2,by+B.height/2];
   const dx=bc[0]-ac[0],dy=bc[1]-ac[1];let p,q,c1,c2;
@@ -190,7 +190,7 @@ function linked(host,get,o){const draw=()=>threads(host,get(),o);host._draw=draw
 /* ---------- uzly ---------- */
 const W=i=>`var(--w${i%6+1})`;
 function node(item,ctx,cls='',hue){
- item=norm(item);const lv=ctx.level,detail=lv>=2&&lv<4&&item.d;
+ item=norm(item);const lv=ctx.level,detail=lv>=2&&lv<4&&item.d&&!(ctx.hide&&ctx.sheet);
  const n=el('div',{class:'n '+cls,'data-k':item.t});if(hue!=null)n.style.setProperty('--c',W(hue));
  if(item.ic&&(lv===4||ctx.icons!==false))n.append(ic(item.ic));
  n.append(el('div',{class:'tx'},detail?el('b',{},txt(item,lv)):txt(item,lv),detail?el('small',{},item.d):null));
@@ -391,6 +391,7 @@ function openPrint(){
  const ov=el('div',{class:'ov print',role:'dialog','aria-modal':'true','aria-label':'Náhľad tlače'},el('div',{class:'bar noprint'},el('b',{},'Náhľad tlače A4'),msg,saveB,el('button',{class:'btn',type:'button',onclick:close},'Zavrieť')),pages);
  $('#ovRoot').replaceChildren(ov);
  const w=wordBank(s1);if(w.length){bank.hidden=false;bank.textContent=w.join('   ·   ')}
+ const fit=Math.min(1,(innerWidth-24)/794);if(fit<1)pages.style.zoom=fit;
  pages.querySelectorAll('.dg').forEach(d=>d._draw?.());
 }
 /* ---------- živé generovanie ---------- */

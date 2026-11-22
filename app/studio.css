@@ -313,10 +313,27 @@ aside{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
 @media (max-width:980px){aside{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:640px){.pin{padding:0;background:none;box-shadow:none;min-height:0}.pin span{display:none}.mind .n.strong{width:150px;height:150px;font-size:20px}.mind .hubc{order:-1}.cells{gap:12px}}
 @media (prefers-reduced-motion:no-preference){.threads .t1{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .7s ease-out .22s forwards}@keyframes draw{to{stroke-dashoffset:0}}}
-@media print{#ovRoot .ov{position:static;display:block;padding:0;background:#fff;overflow:visible}.pages{display:block;overflow:visible}.wrap{display:none}.sheet{box-shadow:none;width:auto;min-height:0;padding:0;page-break-after:always}.noprint{display:none!important}body{background:#fff;padding:0}@page{size:A4;margin:16mm}}
+@media print{.pages{zoom:1!important}#ovRoot .ov{position:static;display:block;padding:0;background:#fff;overflow:visible}.pages{display:block;overflow:visible}.wrap{display:none}.sheet{box-shadow:none;width:auto;min-height:0;padding:0;page-break-after:always}.noprint{display:none!important}body{background:#fff;padding:0}@page{size:A4;margin:16mm}}
 
 .sharebox{display:grid;gap:12px;justify-items:center;text-align:center;max-width:520px;margin:auto;padding:24px;background:var(--surface);border-radius:14px;width:100%}
 .sharebox input{width:100%;min-height:44px;border:1px solid var(--line);border-radius:9px;background:var(--bg);padding:8px 10px}
 .sharebox img{width:min(340px,70vw);height:auto;background:#fff;padding:8px;border-radius:8px}
 body.student .brief,body.student .rail,body.student #guide,body.student aside,body.student #boardBtn,body.student #printBtn,body.student #shareBtn,body.student #hideBtn,body.student .tag{display:none}
 .threads.still .t1{animation:none;stroke-dasharray:none;stroke-dashoffset:0}
+
+/* mobil: musí byť na konci, aby prebil pravidlá pre počítač */
+@media (max-width:640px){
+  .mind{grid-template-columns:minmax(0,1fr);gap:14px}
+  .mind .hubc{order:-1}
+  .mind .n.strong{width:auto;height:auto;min-height:0;border-radius:14px;font-size:20px;box-shadow:none}
+  .mind .col{gap:14px}
+  .canvas h2{font-size:24px}
+  .toolbar .btn{flex:1 1 auto}
+  .seg{width:100%}.seg button{flex:1 1 auto}
+  .board .bar{gap:6px}.board .bar b{width:100%;font-size:22px}
+  .board .bar .btn{min-height:40px;padding:6px 10px;font-size:14px}
+  .g-steps li{grid-template-columns:56px minmax(0,1fr)}
+  .sheet .mind{grid-template-columns:minmax(0,1fr) 130px minmax(0,1fr);gap:18px 34px}
+  .sheet .mind .hubc{order:0}
+  .sheet .mind .n.strong{width:130px;height:130px;border-radius:50%;font-size:18px}
+}
