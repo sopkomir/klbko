@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'node:crypto';
 import { AiError, askJson } from '@/lib/ai';
 import { hasStore, load, save } from '@/lib/store';
+import { findMethod, methodById } from '@/lib/metodiky';
 import { byIds, find, type Program } from '@/lib/svp';
 import { FORMS, KIND, cleanForm, cleanTopic, formPrompt, guidePrompt, topicPrompt, type Q } from '@/lib/prompts';
 
@@ -53,8 +54,9 @@ export async function POST(req: NextRequest) {
       const { value, provider } = await askJson(formPrompt(q), x => !!cleanForm(q.form, x));
       out = { provider, data: cleanForm(q.form, value)!.data };
     } else {
-      const { value, provider } = await askJson(guidePrompt(q), x => !!x?.primer && x.steps?.length > 0 && x.traps?.length > 0);
-      out = { provider, guide: { primer: String(value.primer), steps: value.steps, traps: value.traps, qa: value.qa ?? [] } };
+      const pool = findMethod(title, subject);
+      const { value, provider } = await askJson(guidePrompt(q, pool), x => !!x?.primer && x.steps?.length > 0 && x.traps?.length > 0);
+      out = { provider, guide: { primer: String(value.primer), steps: value.steps, traps: value.traps, qa: value.qa ?? [], sources: methodById(value.sources, pool) } };
     }
     if (cache.size > 300) cache.clear();
     cache.set(key, out);

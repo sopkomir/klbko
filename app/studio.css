@@ -426,3 +426,8 @@ body.student #libBtn,body.student #saveBtn,body.student .topnav{display:none}
 .scene>svg.leaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 .easy .scene .pin{font-family:var(--f-body)}
 @media (max-width:640px){.scene .pin{max-width:none;padding:0;background:none;box-shadow:none}.scene .pin span{display:none}.scene .pin i{width:28px;height:28px;box-shadow:0 0 0 2px #fff,0 2px 6px rgba(0,0,0,.3)}}
+.g-src ul{margin:0;padding-left:18px;display:grid;gap:5px;font-size:14px}.g-src a{color:var(--wool-ink)}
+
+.scene .motion{position:absolute;right:10px;bottom:10px;z-index:4;min-height:36px;border-radius:99px;border:1px solid rgba(17,26,51,.15);background:rgba(255,255,255,.92);color:#111a33;font:600 13px var(--f-body);padding:6px 12px}
+.scene.paused *{animation-play-state:paused!important}
+.sheet .scene .motion{display:none}

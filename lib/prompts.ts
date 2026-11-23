@@ -28,16 +28,17 @@ Do "data" vlož priamo polia podoby, napríklad pri mind {"center":"...","branch
 ${SCHEMA}`;
 const SCENE = `Nakresli k téme jednoduchú názornú animovanú ilustráciu pre žiakov ako SVG.
 Pravidlá pre SVG: koreňový prvok <svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg">; plochý štýl, výrazné ale príjemné farby, pozadie vyplní celú plochu; ŽIADNY text ani písmená; povolené sú iba path, circle, ellipse, rect, line, polyline, polygon, g, defs, linearGradient, radialGradient, stop, animate, animateTransform, animateMotion; žiadne skripty, obrázky ani odkazy.
-Animácia musí ukazovať podstatu deja alebo stavby (napríklad obeh elektrónov okolo jadra, prúdenie krvi, pohyb planét, rast rastliny). Použi 2 až 5 plynulých nekonečných animácií (repeatCount="indefinite").
+Animácia musí ukazovať podstatu deja alebo stavby (napríklad obeh elektrónov okolo jadra, prúdenie krvi, pohyb planét, rast rastliny). Pohyb urob výhradne prvkami animate, animateTransform alebo animateMotion priamo v SVG (nie CSS, nie <style>, nie atribút style). Použi 2 až 5 plynulých nekonečných animácií (repeatCount="indefinite").
 Obrázok musí byť vecne správny. Radšej jednoduchší a správny než zložitý.
 Dĺžka SVG najviac 12000 znakov.
 Potom urči 4 až 6 popisov. Každý je miesto na obrázku: x a y v percentách šírky a výšky (0 až 100), kde sa daná časť nachádza.
 Odpovedz len JSON objektom: {"svg":"<svg ...>...</svg>","points":[{"t":"názov časti","d":"jedna veta vysvetlenia","e":"veľmi jednoduchá veta pre žiaka so ŠVVP","ic":"piktogram","x":50,"y":40,"l":1}]}
 Povolené hodnoty ic: ${ICONS}.`;
 export const formPrompt = (q: Q) => q.form === 'scene' ? `${head(q)}\n${SCENE}` : `${head(q)}\nPriprav pomôcku v podobe ${q.form}. Odpovedz len JSON hodnotou tvaru podoby ${q.form}.\n${SCHEMA}`;
-export const guidePrompt = (q: Q) => `${head(q)}
+export const guidePrompt = (q: Q, m: { id: string; title: string; text: string }[] = []) => `${head(q)}
 Pomáhaš kolegovi, ktorý tento predmet nevyštudoval. Hodina má 45 minút.
-Odpovedz len JSON objektom: {"primer":"3 vety, ktoré učiteľovi vysvetlia podstatu","steps":[{"time":"5 min","do":"čo urobiť","say":"veta, ktorú môže povedať (len pri prvých dvoch krokoch)","check":"ako overí, že to žiaci chápu"}] (4 kroky, aspoň v dvoch pracujú žiaci),"traps":[["častý omyl žiakov","ako to je správne"]] (3),"qa":[["otázka žiaka","jednoduchá odpoveď"]] (2)}`;
+${m.length ? 'Úryvky z oficiálnych metodík portálu Učíme (NIVAM). Opri sa o ne, ak sa k téme hodia, ale nepreberaj ich doslova:\n' + m.map(x => `${x.id} (${x.title.slice(0, 90)}): ${x.text}`).join('\n') + '\n' : ''}
+Odpovedz len JSON objektom: {"primer":"3 vety, ktoré učiteľovi vysvetlia podstatu","steps":[{"time":"5 min","do":"čo urobiť","say":"veta, ktorú môže povedať (len pri prvých dvoch krokoch)","check":"ako overí, že to žiaci chápu"}] (4 kroky, aspoň v dvoch pracujú žiaci),"traps":[["častý omyl žiakov","ako to je správne"]] (3),"qa":[["otázka žiaka","jednoduchá odpoveď"]] (2),"sources":["id úryvkov, z ktorých si naozaj vychádzal, inak prázdny zoznam"]}`;
 const SHAPE: [string, (v: any) => boolean][] = [
   ['mind', v => Array.isArray(v?.branches)], ['timeline', v => Array.isArray(v?.events)], ['cycle', v => Array.isArray(v?.steps)],
   ['venn', v => Array.isArray(v?.left) || Array.isArray(v?.right)], ['ttable', v => Array.isArray(v?.rows)], ['fish', v => Array.isArray(v?.groups)],
@@ -50,11 +51,11 @@ export function cleanForm(f: string | undefined, input: any): { form: string; da
   if (f === 'scene') {
     const v = input?.scene ?? input?.data ?? input;
     const svg = (typeof v?.svg === 'string' ? v.svg.trim() : '')
-      .replace(/<(script|foreignObject|style|image|iframe)[\s\S]*?(<\/\1>|\/>)/gi, '')
+      .replace(/<(script|foreignObject|image|iframe)[\s\S]*?(<\/\1>|\/>)/gi, '')
       .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
       .replace(/javascript:/gi, '');
     const points = Array.isArray(v?.points) ? v.points.filter((p: any) => p?.t && Number.isFinite(+p.x) && Number.isFinite(+p.y)).slice(0, 8) : [];
-    if (!/^<svg[\s>]/i.test(svg) || svg.length > 40000 || points.length < 2) return null;
+    if (!/^<svg[\s>]/i.test(svg) || svg.length > 40000 || !/<animate|@keyframes|animation\s*:/i.test(svg) || points.length < 2) return null;
     return { form: 'scene', data: { svg, points: points.map((p: any) => ({ ...p, x: Math.min(96, Math.max(4, +p.x)), y: Math.min(94, Math.max(6, +p.y)) })) } };
   }
   let v = input;

@@ -200,18 +200,31 @@ function node(item,ctx,cls='',hue){
  return n;
 }
 /* ---------- animovaná scéna od AI ---------- */
-const SVG_TAGS=new Set(['svg','g','path','circle','ellipse','rect','line','polyline','polygon','defs','lineargradient','radialgradient','stop','animate','animatetransform','animatemotion','mpath','clippath']);
-const SVG_ATTR=/^(d|cx|cy|r|rx|ry|x|y|x1|x2|y1|y2|width|height|points|fill|fill-opacity|fill-rule|stroke|stroke-width|stroke-opacity|stroke-linecap|stroke-linejoin|stroke-dasharray|stroke-dashoffset|opacity|transform|viewbox|id|offset|stop-color|stop-opacity|gradientunits|gradienttransform|attributename|attributetype|values|from|to|by|dur|begin|end|repeatcount|keytimes|keysplines|calcmode|type|path|rotate|additive|accumulate|clip-path|href|xlink:href|xmlns|fx|fy|spreadmethod|pathlength)$/i;
+const SVG_TAGS=new Set(['style','svg','g','path','circle','ellipse','rect','line','polyline','polygon','defs','lineargradient','radialgradient','stop','animate','animatetransform','animatemotion','mpath','clippath']);
+const SVG_ATTR=/^(d|cx|cy|r|rx|ry|x|y|x1|x2|y1|y2|width|height|points|fill|fill-opacity|fill-rule|stroke|stroke-width|stroke-opacity|stroke-linecap|stroke-linejoin|stroke-dasharray|stroke-dashoffset|opacity|transform|viewbox|id|offset|stop-color|stop-opacity|gradientunits|gradienttransform|attributename|attributetype|values|from|to|by|dur|begin|end|repeatcount|keytimes|keysplines|calcmode|type|path|rotate|additive|accumulate|clip-path|href|xlink:href|xmlns|fx|fy|spreadmethod|pathlength|class|style|transform-origin|transform-box)$/i;
+const CSS_PROP=/^(animation(-[a-z-]+)?|transform(-origin|-box)?|opacity|fill(-opacity)?|stroke(-[a-z-]+)?|offset-(path|distance|rotate)|visibility)$/;
+const cleanDecl=t=>t.split(';').map(d=>d.trim()).filter(d=>{const k=d.split(':')[0].trim().toLowerCase();return CSS_PROP.test(k)&&!/url\(|expression|javascript|@import|behavior/i.test(d)}).join(';');
+function cleanCss(css,scope){let out='';const re=/@keyframes\s+([\w-]+)\s*\{((?:[^{}]*\{[^{}]*\})*)\s*\}|([^{}@]+)\{([^{}]*)\}/g;let m;
+ while((m=re.exec(css))){if(m[1]){const body=m[2].replace(/([^{}]+)\{([^{}]*)\}/g,(_,k,d)=>/^[\s\d%,fromto.]+$/i.test(k)?`${k}{${cleanDecl(d)}}`:'');out+=`@keyframes ${m[1]}{${body}}`}
+  else{const sel=m[3].split(',').map(x=>x.trim()).filter(x=>/^[\w.#\s>:-]+$/.test(x)&&!/^(html|body|:root)/i.test(x)).map(x=>`#${scope} ${x}`).join(',');const d=cleanDecl(m[4]);if(sel&&d)out+=`${sel}{${d}}`}}
+ return out}
 function cleanSvg(str){
  try{const doc=new DOMParser().parseFromString(String(str),'image/svg+xml'),root=doc.documentElement;
   if(root.nodeName.toLowerCase()!=='svg'||doc.getElementsByTagName('parsererror').length)return null;
+  const scope='sc'+Math.random().toString(36).slice(2,8);
   const walk=n=>{for(const k of [...n.childNodes]){if(k.nodeType!==1){k.remove();continue}
+   if(k.nodeName.toLowerCase()==='style'){const css=cleanCss(k.textContent||'',scope);k.replaceChildren();if(css)k.textContent=css;else k.remove();continue}
    if(!SVG_TAGS.has(k.nodeName.toLowerCase())){k.remove();continue}
-   for(const a of [...k.attributes]){const v=a.value;if(!SVG_ATTR.test(a.name)||/javascript|data:|url\((?!\s*#)/i.test(v)||(/href$/i.test(a.name)&&!v.startsWith('#')))k.removeAttribute(a.name)}
+   for(const a of [...k.attributes]){const v=a.value;if(a.name==='style'){const d=cleanDecl(v);d?k.setAttribute('style',d):k.removeAttribute('style');continue}if(!SVG_ATTR.test(a.name)||/javascript|data:|url\((?!\s*#)/i.test(v)||(/href$/i.test(a.name)&&!v.startsWith('#')))k.removeAttribute(a.name)}
    walk(k)}};
   for(const a of [...root.attributes])if(!/^(viewbox|xmlns|preserveaspectratio)$/i.test(a.name))root.removeAttribute(a.name);
-  walk(root);root.setAttribute('viewBox','0 0 1200 640');root.setAttribute('preserveAspectRatio','xMidYMid meet');root.setAttribute('aria-hidden','true');
+  walk(root);root.setAttribute('viewBox','0 0 1200 640');root.setAttribute('preserveAspectRatio','xMidYMid meet');root.setAttribute('aria-hidden','true');root.setAttribute('id',scope);
   return root.outerHTML}catch{return null}}
+function motionBtn(sc){
+ const still=matchMedia('(prefers-reduced-motion:reduce)').matches;
+ const b=el('button',{class:'motion noprint',type:'button'});
+ const set=on=>{sc.classList.toggle('paused',!on);sc.querySelectorAll(':scope>svg').forEach(s=>{try{on?s.unpauseAnimations():s.pauseAnimations()}catch{}});b.textContent=on?'Pozastaviť animáciu':'Spustiť animáciu';b.setAttribute('aria-pressed',String(on))};
+ b.onclick=()=>set(sc.classList.contains('paused'));sc.append(b);requestAnimationFrame(()=>set(!still))}
 function pinLayout(sc){
  const lay=()=>{const W=sc.clientWidth,H=sc.clientHeight;if(!W)return;
   const pins=[...sc.querySelectorAll(':scope>.pin')].filter(p=>!p.classList.contains('veil'));
@@ -231,7 +244,7 @@ function pinLayout(sc){
 function aiScene(d,c){const lv=c.level,pts=d.points.filter(x=>vis(x,lv)),svg=cleanSvg(d.svg);
  const sc=el('div',{class:'scene ai'});if(svg)sc.innerHTML=svg;else sc.append(el('p',{class:'warn'},'Obrázok sa nepodarilo zobraziť.'));
  const ns=pts.map((x,i)=>{const n=node(x,c,'',i);n.dataset.no=i+1;const lab=el('span',{},c.hide?(c.sheet?'':'?'):norm(x).t),pin=el('button',{class:'pin',type:'button','data-x':x.x,'data-y':x.y,style:`left:${x.x}%;top:${x.y}%;--c:${W(i)}`,'aria-label':'Časť '+(i+1),onclick:()=>{if(n.classList.contains('hid'))n.click()}},el('i',{},i+1),lab);n._pin=pin;if(c.hide)n.addEventListener('click',()=>{lab.textContent=norm(x).t;sc._lay?.()});sc.append(pin);return n});
- pinLayout(sc);
+ pinLayout(sc);motionBtn(sc);
  return el('div',{class:'dg scenewrap side'},sc,el('div',{class:'strip'},ns))}
 
 const R={
@@ -264,7 +277,7 @@ const R={
  quiz(d,c){return el('div',{class:'dg quiz'},d.filter(x=>vis(x,c.level)).map(x=>{const why=el('div',{class:'why',hidden:true},x.w);const q=el('div',{class:'q'},el('p',{},x.q),x.o.map((o,i)=>el('button',{type:'button',onclick(ev){q.querySelectorAll('button').forEach(b=>b.classList.remove('good','badc'));ev.currentTarget.classList.add(i===x.k?'good':'badc');why.hidden=false;why.textContent=(i===x.k?'Správne. ':'Skúste ešte raz. ')+x.w}},o)),why);return q}))},
  vvn(d,c){const col=(h,l,i)=>el('div',{class:'c',style:'--c:'+W(i)},el('h4',{},h),l.map(x=>node(x,{...c,hide:false},'',i)));return el('div',{class:'dg vvn'},col('Viem',d.know,0),col('Chcem vedieť',d.want,3),col('Naučil/a som sa',d.learned,2))}
 };
-function renderForm(form,data,ctx){const out=R[form](data,ctx);if(ctx.sheet||matchMedia('(prefers-reduced-motion:reduce)').matches)out.querySelectorAll('[data-anim],animate,animateMotion,animateTransform').forEach(a=>a.remove());return ctx.level===4?el('div',{class:'easy'},out):out}
+function renderForm(form,data,ctx){const out=R[form](data,ctx);if(ctx.sheet)out.querySelectorAll('[data-anim],animate,animateMotion,animateTransform').forEach(a=>a.remove());return ctx.level===4?el('div',{class:'easy'},out):out}
 
 /* ---------- ilustrované scény ---------- */
 function waterSVG(){
@@ -290,7 +303,7 @@ function waterSVG(){
  <path d="M0-20C7-8 13 0 13 8a13 13 0 0 1-26 0C-13 0-7-8 0-20z" data-anim="1" fill="#1f7fe0" stroke="#fff" stroke-width="3"><animateMotion dur="11s" repeatCount="indefinite" path="${loop}"/></path></svg>`}
 function waterScene(d,c){const lv=c.level,s=d.steps.filter(x=>vis(x,lv)),sc=el('div',{class:'scene',html:waterSVG()});
  const ns=s.map((x,i)=>{const n=node(x,c,'',i);n.dataset.no=i+1;const lab=el('span',{},c.hide?(c.sheet?'':'?'):norm(x).t),pin=el('button',{class:'pin',type:'button','data-x':x.at[0],'data-y':x.at[1],style:`left:${x.at[0]}%;top:${x.at[1]}%;--c:${W(i)}`,'aria-label':'Krok '+(i+1),onclick:()=>{if(n.classList.contains('hid'))n.click()}},el('i',{},i+1),lab);n._pin=pin;if(c.hide)n.addEventListener('click',()=>{lab.textContent=norm(x).t;sc._lay?.()});sc.append(pin);return n});
- pinLayout(sc);
+ pinLayout(sc);motionBtn(sc);
  return el('div',{class:'dg scenewrap side'},sc,el('div',{class:'strip'},ns))}
 function moravaSVG(path){let st='';for(let i=0;i<40;i++)st+=`<circle cx="${i*97%1200}" cy="${i*61%230}" r="${1+i%3*.6}" fill="#fff" opacity="${.3+i%4*.18}"/>`;
  let pal='';for(let i=0;i<34;i++)pal+=`<path d="M${820+i*9} 452v-${26+i%3*5}l4-7 4 7v${26+i%3*5}z" fill="#3d2a4a"/>`;
@@ -376,11 +389,12 @@ function guideBoxes(g){const it=(l,hue)=>el('div',{class:'g-list'},l.map(([a,b])
  return{primer:el('div',{class:'g-box'},el('h3',{},'Téma za minútu'),el('p',{},g.primer)),
   steps:el('div',{class:'g-box'},el('h3',{},'Priebeh hodiny'),el('ol',{class:'g-steps'},g.steps.map(s=>el('li',{},el('span',{class:'tm'},s.time),el('div',{},el('b',{},s.do),s.say?el('q',{},s.say):null,el('small',{},s.check)))))),
   traps:el('div',{class:'g-box'},el('h3',{},'Na čo si dať pozor'),it(g.traps,0)),
-  qa:el('div',{class:'g-box'},el('h3',{},'Keď sa žiaci opýtajú'),it(g.qa,3))}}
+  qa:el('div',{class:'g-box'},el('h3',{},'Keď sa žiaci opýtajú'),it(g.qa,3)),
+  src:g.sources?.length?el('div',{class:'g-box g-src'},el('h3',{},'Z metodík portálu Učíme'),el('ul',{},g.sources.map(x=>el('li',{},el('a',{href:x.url,target:'_blank',rel:'noopener'},x.title),x.page?` (strana ${x.page})`:'')))):''}}
 function paintGuide(){const p=$('#guide'),g=S.topic.guide;
  const head=[el('h2',{},'Sprievodca hodinou'),el('p',{},'Všetko, čo potrebujete vedieť a povedať, aj keď tento predmet neučíte každý deň.')];
  if(!g){p.replaceChildren(...head,sample?el('button',{class:'btn main',type:'button',style:'justify-self:start',onclick:()=>genGuide()},'Pripraviť sprievodcu cez AI'):el('p',{class:'warn'},'Sprievodcu pripraví AI.'));return}
- const b=guideBoxes(g);p.replaceChildren(...head,el('div',{class:'g-grid'},el('div',{class:'g-col'},b.primer,b.steps),el('div',{class:'g-col'},b.traps,b.qa)))}
+ const b=guideBoxes(g);p.replaceChildren(...head,el('div',{class:'g-grid'},el('div',{class:'g-col'},b.primer,b.steps),el('div',{class:'g-col'},b.traps,b.qa,b.src)))}
 function paintAll(){paintBrief();paintRail();paintLevels();paintCanvas();paintGuide();paintWhy();paintSvp()}
 
 /* ---------- tabuľa ---------- */
