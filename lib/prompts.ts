@@ -1,6 +1,6 @@
 import type { Standard } from './svp';
 export const ICONS = 'sun, cloud, rain, drop, snow, river, mountain, plant, factory, people, crown, book, cross, castle, sword, cell, bolt, star, map';
-export const FORMS = ['mind', 'timeline', 'venn', 'ttable', 'fish', 'cycle', 'tree', 'cards', 'quiz', 'vvn'];
+export const FORMS = ['scene', 'mind', 'timeline', 'venn', 'ttable', 'fish', 'cycle', 'tree', 'cards', 'quiz', 'vvn'];
 export const KIND: Record<string, string> = { pojmy: 'mind', chrono: 'timeline', porovnanie: 'venn', pricina: 'fish', proces: 'cycle', hierarchia: 'tree' };
 const SCHEMA = `Tvary podôb (každý text môže byť reťazec alebo objekt {"t":text,"e":veľmi jednoduchá verzia pre žiaka so ŠVVP (krátka veta, bežné slová),"d":jedna veta vysvetlenia,"ic":piktogram,"l":úroveň 1|2|3}; l: 1 je základ, 2 rozšírenie, 3 výzva):
 mind: {"center":"","branches":[{"t":"","ic":"","kids":[...]}]} (4 vetvy)
@@ -26,7 +26,15 @@ Urč typ učiva a podobu: pojmy→mind, chrono→timeline, porovnanie→venn, pr
 Odpovedz len JSON objektom: {"kind":"jedna hodnota z pojmy, chrono, porovnanie, pricina, proces, hierarchia","why":"dve vety pre učiteľa, prečo práve táto podoba","alts":[["id podoby","kedy by bola lepšia"]],"standards":["S1"],"data":objekt presne v tvare zvolenej podoby}
 Do "data" vlož priamo polia podoby, napríklad pri mind {"center":"...","branches":[...]}, bez ďalšieho obalu.
 ${SCHEMA}`;
-export const formPrompt = (q: Q) => `${head(q)}\nPriprav pomôcku v podobe ${q.form}. Odpovedz len JSON hodnotou tvaru podoby ${q.form}.\n${SCHEMA}`;
+const SCENE = `Nakresli k téme jednoduchú názornú animovanú ilustráciu pre žiakov ako SVG.
+Pravidlá pre SVG: koreňový prvok <svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg">; plochý štýl, výrazné ale príjemné farby, pozadie vyplní celú plochu; ŽIADNY text ani písmená; povolené sú iba path, circle, ellipse, rect, line, polyline, polygon, g, defs, linearGradient, radialGradient, stop, animate, animateTransform, animateMotion; žiadne skripty, obrázky ani odkazy.
+Animácia musí ukazovať podstatu deja alebo stavby (napríklad obeh elektrónov okolo jadra, prúdenie krvi, pohyb planét, rast rastliny). Použi 2 až 5 plynulých nekonečných animácií (repeatCount="indefinite").
+Obrázok musí byť vecne správny. Radšej jednoduchší a správny než zložitý.
+Dĺžka SVG najviac 12000 znakov.
+Potom urči 4 až 6 popisov. Každý je miesto na obrázku: x a y v percentách šírky a výšky (0 až 100), kde sa daná časť nachádza.
+Odpovedz len JSON objektom: {"svg":"<svg ...>...</svg>","points":[{"t":"názov časti","d":"jedna veta vysvetlenia","e":"veľmi jednoduchá veta pre žiaka so ŠVVP","ic":"piktogram","x":50,"y":40,"l":1}]}
+Povolené hodnoty ic: ${ICONS}.`;
+export const formPrompt = (q: Q) => q.form === 'scene' ? `${head(q)}\n${SCENE}` : `${head(q)}\nPriprav pomôcku v podobe ${q.form}. Odpovedz len JSON hodnotou tvaru podoby ${q.form}.\n${SCHEMA}`;
 export const guidePrompt = (q: Q) => `${head(q)}
 Pomáhaš kolegovi, ktorý tento predmet nevyštudoval. Hodina má 45 minút.
 Odpovedz len JSON objektom: {"primer":"3 vety, ktoré učiteľovi vysvetlia podstatu","steps":[{"time":"5 min","do":"čo urobiť","say":"veta, ktorú môže povedať (len pri prvých dvoch krokoch)","check":"ako overí, že to žiaci chápu"}] (4 kroky, aspoň v dvoch pracujú žiaci),"traps":[["častý omyl žiakov","ako to je správne"]] (3),"qa":[["otázka žiaka","jednoduchá odpoveď"]] (2)}`;
@@ -39,6 +47,16 @@ const SHAPE: [string, (v: any) => boolean][] = [
 const shapeOf = (v: any) => SHAPE.find(([, t]) => t(v))?.[0];
 /** Rozbalí obal okolo obsahu a doplní prázdne časti, aby sa pomôcka dala vykresliť. */
 export function cleanForm(f: string | undefined, input: any): { form: string; data: any } | null {
+  if (f === 'scene') {
+    const v = input?.scene ?? input?.data ?? input;
+    const svg = (typeof v?.svg === 'string' ? v.svg.trim() : '')
+      .replace(/<(script|foreignObject|style|image|iframe)[\s\S]*?(<\/\1>|\/>)/gi, '')
+      .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+      .replace(/javascript:/gi, '');
+    const points = Array.isArray(v?.points) ? v.points.filter((p: any) => p?.t && Number.isFinite(+p.x) && Number.isFinite(+p.y)).slice(0, 8) : [];
+    if (!/^<svg[\s>]/i.test(svg) || svg.length > 40000 || points.length < 2) return null;
+    return { form: 'scene', data: { svg, points: points.map((p: any) => ({ ...p, x: Math.min(96, Math.max(4, +p.x)), y: Math.min(94, Math.max(6, +p.y)) })) } };
+  }
   let v = input;
   for (let i = 0; i < 3 && v && typeof v === 'object' && !Array.isArray(v) && !shapeOf(v); i++) {
     const k = Object.keys(v).find(x => FORMS.includes(x)) ?? Object.keys(v).find(x => ['data', 'content', 'obsah', 'questions', 'cards', 'quiz'].includes(x)) ?? (Object.keys(v).length === 1 ? Object.keys(v)[0] : undefined);

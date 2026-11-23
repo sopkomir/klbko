@@ -388,3 +388,22 @@ header.top{padding-block:14px 12px;border-bottom:1px solid var(--line);gap:18px}
 @media (prefers-reduced-motion:no-preference){.n.now{animation:pop .45s ease-out}@keyframes pop{from{transform:scale(.88);opacity:.2}to{transform:none;opacity:1}}}
 @media (max-width:640px){.topnav{display:none}.brand small{font-size:12px}}
 @media (max-width:640px){.brief{grid-template-columns:minmax(0,1fr)}.chips{gap:6px}.chip{white-space:nowrap;min-height:34px}details.notes{justify-self:start}.board .caption{font-size:16px;padding:10px 12px}}
+
+/* AI scéna */
+.scene.ai{aspect-ratio:1200/640;background:var(--surface-2)}
+.scene.ai>svg{position:absolute;inset:0;width:100%;height:100%}
+/* jemnejšie hlavné uzly */
+.n.mid{background:color-mix(in srgb,var(--c) 14%,var(--node));color:var(--fg);border-color:var(--c)}
+.n.mid .pic{color:var(--c)}
+/* tabuľa: svetlá, čitateľná na projektore */
+.ov.board{--bg:#f4f6f9;--fg:#111a33;--muted:#5a6479;--surface:#fff;--surface-2:#eef1f6;--line:#dde3ec;--node:#fff;--node-2:#eef2f8;--node-line:#cfd7e3;--wool:#b0174f;--wool-ink:#8f1240;--wool-soft:#fbe8ef;--on-wool:#fff;--twist:#fff;--ink:#17244d;--on-ink:#fff;--ok-soft:#d8f2e8;--ok:#0d7a57;--bad-soft:#fbe3e4;--bad:#b4232c;
+  background:var(--bg);color:var(--fg);color-scheme:light}
+.ov.board .bar{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px;box-shadow:0 1px 2px rgba(17,26,51,.06)}
+.ov.board .bar b{font:700 22px/1.1 var(--f-display);color:var(--fg)}
+.ov.board .btn{background:var(--surface);border-color:var(--line);color:var(--fg)}
+.ov.board .btn.main{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.ov.board .stage{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;background-image:radial-gradient(var(--line) 1.1px,transparent 1.2px);background-size:24px 24px}
+.ov.board .caption{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-left:6px solid var(--wool);box-shadow:0 8px 24px rgba(17,26,51,.14)}
+.ov.board .caption span{opacity:1;color:var(--muted)}
+.ov.board .mind .n.strong{background:var(--ink);color:var(--on-ink);box-shadow:0 0 0 8px color-mix(in srgb,var(--ink) 10%,transparent)}
+.ov.board .stage{display:grid;align-content:safe center}

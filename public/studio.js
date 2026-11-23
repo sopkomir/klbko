@@ -34,6 +34,7 @@ const P={
  cards:'<rect x="3" y="7" width="13" height="14" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v12"/>',
  quiz:'<path d="M9 9a3 3 0 1 1 4 3c-1 .5-1 1-1 2M12 18h.01"/><circle cx="12" cy="12" r="10"/>',
  vvn:'<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M9 4v16M15 4v16"/>',
+ play:'<circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/>',
  eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
  screen:'<rect x="2" y="4" width="20" height="13" rx="1"/><path d="M12 17v4M8 21h8"/>',
  print:'<path d="M6 9V3h12v6M6 18H3v-8h18v8h-3M6 14h12v7H6z"/>'
@@ -43,6 +44,7 @@ const ic=(n,c='pic')=>{const s=document.createElementNS('http://www.w3.org/2000/
 
 /* ---------- číselníky ---------- */
 const FORMS=[
+ {id:'scene',n:'Animácia',ic:'play',a:'živý obrázok'},
  {id:'mind',n:'Myšlienková mapa',ic:'mind',a:'pojmy a vzťahy'},
  {id:'timeline',n:'Časová os',ic:'line',a:'chronológia'},
  {id:'venn',n:'Vennov diagram',ic:'venn',a:'porovnanie'},
@@ -150,7 +152,7 @@ TOPICS.bunka.guide={primer:'Bunka je základná stavebná jednotka organizmov. R
   {time:'10 min',do:'Opakovanie kartičkami vo dvojiciach.',check:'Každý vysvetlí rozdiel medzi bunkami.'}],
  traps:[['Rastlinné bunky nemajú mitochondrie.','Majú ich. Chloroplasty ich nenahrádzajú.'],['Bunková stena a membrána sú to isté.','Rastlinná bunka má obe. Stena je pevná a je vonku, membrána je tenká a je pod ňou.'],['Bunka je plochá.','Bunka je trojrozmerná, plochá je len na obrázku.']],
  qa:[['Prečo sú listy zelené?','Pre chlorofyl, zelené farbivo v chloroplastoch.'],['Dá sa bunka vidieť voľným okom?','Väčšina buniek nie, treba mikroskop.']]};
-TOPICS.kolobeh.forms.cycle.scene='water';
+TOPICS.kolobeh.forms.cycle.scene='water';TOPICS.kolobeh.forms.scene=TOPICS.kolobeh.forms.cycle;
 {const at={'Vyparovanie':[75,47],'Výpar z rastlín':[37,56],'Kondenzácia':[55,10],'Zrážky':[17,42],'Vsakovanie':[20,87],'Odtok do mora':[50,74]};TOPICS.kolobeh.forms.cycle.steps.forEach(x=>{x.at=at[x.t]})}
 TOPICS.morava.forms.timeline.scene='morava';TOPICS.bunka.forms.venn.scene='cells';
 
@@ -197,7 +199,26 @@ function node(item,ctx,cls='',hue){
  if(ctx.hide&&!cls.includes('keep')){n.classList.add('hid');n.dataset.word=txt(item,lv);if(!ctx.sheet){n.tabIndex=0;n.setAttribute('role','button');n.setAttribute('aria-label','Odkryť skrytý uzol');const open=()=>{n.classList.remove('hid');n.removeAttribute('role');n.tabIndex=-1};n.addEventListener('click',open);n.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}})}}
  return n;
 }
+/* ---------- animovaná scéna od AI ---------- */
+const SVG_TAGS=new Set(['svg','g','path','circle','ellipse','rect','line','polyline','polygon','defs','lineargradient','radialgradient','stop','animate','animatetransform','animatemotion','mpath','clippath']);
+const SVG_ATTR=/^(d|cx|cy|r|rx|ry|x|y|x1|x2|y1|y2|width|height|points|fill|fill-opacity|fill-rule|stroke|stroke-width|stroke-opacity|stroke-linecap|stroke-linejoin|stroke-dasharray|stroke-dashoffset|opacity|transform|viewbox|id|offset|stop-color|stop-opacity|gradientunits|gradienttransform|attributename|attributetype|values|from|to|by|dur|begin|end|repeatcount|keytimes|keysplines|calcmode|type|path|rotate|additive|accumulate|clip-path|href|xlink:href|xmlns|fx|fy|spreadmethod|pathlength)$/i;
+function cleanSvg(str){
+ try{const doc=new DOMParser().parseFromString(String(str),'image/svg+xml'),root=doc.documentElement;
+  if(root.nodeName.toLowerCase()!=='svg'||doc.getElementsByTagName('parsererror').length)return null;
+  const walk=n=>{for(const k of [...n.childNodes]){if(k.nodeType!==1){k.remove();continue}
+   if(!SVG_TAGS.has(k.nodeName.toLowerCase())){k.remove();continue}
+   for(const a of [...k.attributes]){const v=a.value;if(!SVG_ATTR.test(a.name)||/javascript|data:|url\((?!\s*#)/i.test(v)||(/href$/i.test(a.name)&&!v.startsWith('#')))k.removeAttribute(a.name)}
+   walk(k)}};
+  for(const a of [...root.attributes])if(!/^(viewbox|xmlns|preserveaspectratio)$/i.test(a.name))root.removeAttribute(a.name);
+  walk(root);root.setAttribute('viewBox','0 0 1200 640');root.setAttribute('preserveAspectRatio','xMidYMid meet');root.setAttribute('aria-hidden','true');
+  return root.outerHTML}catch{return null}}
+function aiScene(d,c){const lv=c.level,pts=d.points.filter(x=>vis(x,lv)),svg=cleanSvg(d.svg);
+ const sc=el('div',{class:'scene ai'});if(svg)sc.innerHTML=svg;else sc.append(el('p',{class:'warn'},'Obrázok sa nepodarilo zobraziť.'));
+ const ns=pts.map((x,i)=>{const n=node(x,c,'',i);n.dataset.no=i+1;const lab=el('span',{},c.hide?(c.sheet?'':'?'):txt(x,lv)),pin=el('button',{class:'pin',type:'button',style:`left:${x.x}%;top:${x.y}%;--c:${W(i)}`,'aria-label':'Časť '+(i+1),onclick:()=>{if(n.classList.contains('hid'))n.click()}},el('i',{},i+1),lab);n._pin=pin;if(c.hide)n.addEventListener('click',()=>{lab.textContent=txt(x,lv)});sc.append(pin);return n});
+ return el('div',{class:'dg scenewrap side'},sc,el('div',{class:'strip'},ns))}
+
 const R={
+ scene(d,c){if(d.scene==='water')return waterScene(d,c);return aiScene(d,c)},
  mind(d,c){const b=d.branches.filter(x=>vis(x,c.level)),mid=Math.ceil(b.length/2),hub=node({t:d.center},c,'strong keep'),links=[];let h0=0;
   const col=list=>el('div',{class:'col'},list.map(x=>{const hue=h0++,h=node(x,c,'mid',hue),k=(x.kids||[]).filter(y=>vis(y,c.level));if(c.width>=560)links.push([hub,h,'h',W(hue)]);return el('div',{class:'branch'},h,el('div',{class:'kids'},k.map(y=>node(y,c,'',hue))))}));
   return linked(el('div',{class:'dg mind'},col(b.slice(0,mid)),el('div',{class:'hubc'},hub),col(b.slice(mid))),()=>links)},
@@ -405,21 +426,21 @@ const sample=true;
 function setStatus(t,err,stop){const s=$('#status');s.hidden=!t;s.className='status'+(err?' err':'');s.replaceChildren(t||'');if(stop)s.append(stop)}
 function errCopy(c){return({not_granted:'Bez povolenia sa vlastná téma nedá spracovať. Vyberte niektorú z pripravených tém.',sampling_disabled:'AI nie je pre tento účet dostupná.',rate_limited:'Dosiahli ste limit používania. Skúste to o chvíľu.',session_expired:'Prihláste sa znova a skúste to ešte raz.',refused:'Túto tému sa nepodarilo spracovať. Skúste ju sformulovať inak.',invalid_json:'Výsledok sa nepodaril. Stlačte Pripraviť pomôcku ešte raz.'})[c]||'Spojenie zlyhalo. Skúste to ešte raz.'}
 const http=(u,o)=>fetch(u,o).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||'Chyba'),{user:j.error});return j});
-async function ask(body,onOk,quiet){
+async function ask(body,onOk,quiet){const qmsg=typeof quiet==='string'?quiet:'Dopĺňam Sprievodcu hodinou. ';
  const ctl=new AbortController();const stop=el('button',{class:'btn',type:'button',onclick:()=>ctl.abort()},'Zastaviť');
- setStatus(quiet?'Dopĺňam Sprievodcu hodinou. ':'AI pripravuje materiál, zvyčajne to trvá do minúty. ',false,stop);$('#goBtn').disabled=true;
+ setStatus(quiet?qmsg:'AI pripravuje materiál, zvyčajne to trvá do minúty. ',false,stop);$('#goBtn').disabled=true;
  try{onOk(await http('/api/generate',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:ctl.signal}));setStatus('')}
- catch(e){setStatus(e.name==='AbortError'?'':(quiet?'Sprievodcu sa teraz nepodarilo pripraviť. Pomôcka je hotová, skúste ho o chvíľu.':(e.user||'Spojenie zlyhalo. Skúste to ešte raz.')),true)}
+ catch(e){setStatus(e.name==='AbortError'?'':(quiet?(typeof quiet==='string'?'Animáciu sa teraz nepodarilo nakresliť. Skúste ju o chvíľu v ponuke Animácia.':'Sprievodcu sa teraz nepodarilo pripraviť. Pomôcka je hotová, skúste ho o chvíľu.'):(e.user||'Spojenie zlyhalo. Skúste to ešte raz.')),true)}
  finally{$('#goBtn').disabled=false}
 }
 const base=()=>({title:S.topic.title,subject:S.topic.subject,grade:S.topic.grade,notes:S.topic.notes||''});
 function genTopic(title,subject,grade,notes){
  ask({type:'topic',title,subject,grade,notes},v=>{const f=v.form;if(f==='timeline'&&subject==='Dejepis')v.data.scene='morava';
   const t={title,subject,grade,notes,kind:v.kind,why:{[f]:v.why},alts:v.alts,picked:v.standards,method:null,forms:{[f]:v.data}};
-  S.key='vlastna';S.topic=t;S.form=recOf(t);if(!t.forms[S.form])S.form=f;paintAll();setTimeout(()=>{if(!t.guide)genGuide(true)},0)});
+  S.key='vlastna';S.topic=t;S.form=recOf(t);if(!t.forms[S.form])S.form=f;paintAll();setTimeout(()=>{if(!t.guide)genGuide(true,()=>{if(!t.forms.scene&&S.topic===t)genForm('scene','Kreslím animovaný obrázok. ')})},0)});
 }
-function genGuide(q){const t=S.topic;ask({...base(),type:'guide'},v=>{t.guide=v.guide;if(S.topic===t)paintGuide()},q===true)}
-function genForm(form){const t=S.topic;ask({...base(),type:'form',form},v=>{if(form==='timeline'&&t.subject==='Dejepis')v.data.scene='morava';t.forms[form]=v.data;if(S.form===form)paintAll()})}
+function genGuide(q,then){const t=S.topic;ask({...base(),type:'guide'},v=>{t.guide=v.guide;if(S.topic===t)paintGuide();then?.()},q===true)}
+function genForm(form,quiet){const t=S.topic;ask({...base(),type:'form',form},v=>{if(form==='timeline'&&t.subject==='Dejepis')v.data.scene='morava';t.forms[form]=v.data;if(S.form===form)paintAll();else paintRail()},quiet)}
 
 /* ---------- zdieľanie so žiakmi ---------- */
 function openShare(){
