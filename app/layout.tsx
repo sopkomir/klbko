@@ -7,7 +7,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <html lang="sk">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=Lexend:wght@400;500;600&family=Caveat:wght@600;700&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=Lexend:wght@400;500;600&display=swap" />
       </head>
       <body>{children}</body>
     </html>

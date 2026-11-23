@@ -344,25 +344,31 @@ function paintGuide(){const p=$('#guide'),g=S.topic.guide;
 function paintAll(){paintBrief();paintRail();paintLevels();paintCanvas();paintGuide();paintWhy();paintSvp()}
 
 /* ---------- tabuľa ---------- */
-function openBoard(){
+function openBoard(auto){
  const data=S.topic.forms[S.form];if(!data)return;
- const root=$('#ovRoot');let hide=false,step=0,nodes=[],dg;
+ const root=$('#ovRoot');let hide=false,step=0,nodes=[],dg,timer=null;
+ const cap=el('div',{class:'caption',role:'status','aria-live':'polite'});
  const stage=el('div',{class:'stage'}),count=el('span',{class:'count'});
- const close=()=>{document.removeEventListener('keydown',key);root.replaceChildren();if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{})};
- function apply(){nodes.forEach((n,i)=>{n.classList.toggle('veil',i>=step);n._pin?.classList.toggle('veil',i>=step)});count.textContent=nodes.length?`${Math.min(step,nodes.length)} / ${nodes.length}`:'';stage.querySelectorAll('.dg').forEach(d=>d._draw?.());prevB.disabled=step<=0;nextB.disabled=step>=nodes.length}
+ const close=()=>{clearInterval(timer);document.removeEventListener('keydown',key);root.replaceChildren();if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{})};
+ function apply(){nodes.forEach((n,i)=>{n.classList.toggle('veil',i>=step);n.classList.toggle('now',i===step-1);n._pin?.classList.toggle('veil',i>=step)});const cur=nodes[step-1];if(cur){const b=cur.querySelector('.tx b'),sm=cur.querySelector('.tx small');cap.replaceChildren(el('b',{},(b||cur.querySelector('.tx'))?.textContent||''),sm?el('span',{},sm.textContent):'');cap.hidden=false;cur.scrollIntoView?.({block:'nearest',behavior:'smooth'})}else cap.hidden=true;count.textContent=nodes.length?`${Math.min(step,nodes.length)} / ${nodes.length}`:'';stage.querySelectorAll('.dg').forEach(d=>d._draw?.());prevB.disabled=step<=0;nextB.disabled=step>=nodes.length}
  function build(reset){stage.querySelectorAll('.dg').forEach(d=>d._ro?.disconnect());
   const out=renderForm(S.form,data,{level:S.level,hide,width:Math.max(stage.clientWidth,window.innerWidth-40)});stage.replaceChildren(out);
   nodes=[...stage.querySelectorAll('.n:not(.keep)')];if(reset)step=0;apply()}
  const prevB=el('button',{class:'btn',type:'button',onclick(){if(step>0){step--;apply()}}},'Späť');
  const nextB=el('button',{class:'btn main',type:'button',onclick(){if(step<nodes.length){step++;apply()}}},'Ďalší uzol');
+ const playB=el('button',{class:'btn',type:'button'},'Prehrať');
+ const tick=()=>{if(step<nodes.length){step++;apply()}else stop()};
+ function play(){if(step>=nodes.length){step=0;apply()}clearInterval(timer);timer=setInterval(tick,2600);tick();playB.textContent='Pozastaviť';playB.classList.add('main')}
+ function stop(){clearInterval(timer);timer=null;playB.textContent='Prehrať';playB.classList.remove('main')}
+ playB.onclick=()=>timer?stop():play();
  const showAll=el('button',{class:'btn',type:'button',onclick(){step=nodes.length;apply()}},'Ukázať všetko');
  const hideB=el('button',{class:'btn',type:'button','aria-pressed':'false',onclick(){hide=!hide;hideB.setAttribute('aria-pressed',String(hide));hideB.textContent=hide?'Režim hádania: zapnutý':'Režim hádania';build(false)}},'Režim hádania');
  const full=el('button',{class:'btn',type:'button',onclick(){const o=document.querySelector('.ov');if(o?.requestFullscreen)o.requestFullscreen().catch(()=>{full.hidden=true});else full.hidden=true}},'Celá obrazovka');
  const ov=el('div',{class:'ov board',role:'dialog','aria-modal':'true','aria-label':'Režim tabule'},
-  el('div',{class:'bar'},el('b',{},S.topic.title),prevB,count,nextB,showAll,hideB,full,el('button',{class:'btn',type:'button',onclick:close},'Zavrieť')),stage);
+  el('div',{class:'bar'},el('b',{},S.topic.title),playB,prevB,count,nextB,showAll,hideB,full,el('button',{class:'btn',type:'button',onclick:close},'Zavrieť')),stage,cap);
  root.replaceChildren(ov);
  const key=e=>{if(e.key==='Escape')close();else if(['ArrowRight',' ','PageDown'].includes(e.key)){e.preventDefault();nextB.click()}else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();prevB.click()}};
- document.addEventListener('keydown',key);build(true);nextB.focus();
+ document.addEventListener('keydown',key);build(true);if(auto)setTimeout(play,500);else nextB.focus();
 }
 
 /* ---------- tlač ---------- */
@@ -440,7 +446,7 @@ function loadTopic(k){S.key=k;S.topic=TOPICS[k];S.form=recOf(S.topic);if(!S.topi
  $('#fGoal').replaceChildren(...GOALS.map(([v,n])=>el('option',{value:v},n)));
  $('#samples').append(el('span',{},'Vyskúšajte:'),...Object.entries(TOPICS).map(([k,t])=>el('button',{class:'chip',type:'button','data-k':k,onclick:()=>loadTopic(k)},t.title)));
  $('#boardBtn').append(ic('screen',''),'Na tabuľu');$('#printBtn').append(ic('print',''),'Tlač');
- $('#boardBtn').addEventListener('click',openBoard);$('#shareBtn').append(ic('people',''),'Pre žiakov');$('#shareBtn').addEventListener('click',openShare);$('#printBtn').addEventListener('click',openPrint);
+ $('#boardBtn').addEventListener('click',()=>openBoard());$('#playBtn').append(ic('cycle',''),'Prehrať');$('#playBtn').addEventListener('click',()=>openBoard(true));$('#shareBtn').append(ic('people',''),'Pre žiakov');$('#shareBtn').addEventListener('click',openShare);$('#printBtn').addEventListener('click',openPrint);
  $('#hideBtn').addEventListener('click',()=>{S.hide=!S.hide;paintLevels();paintCanvas()});
  $('#fGoal').addEventListener('change',e=>{S.goal=e.target.value;const r=recOf(S.topic);if(S.topic.forms[r])S.form=r;paintAll()});
  $('#briefForm').addEventListener('submit',e=>{e.preventDefault();const title=$('#fTopic').value.trim();if(!title){setStatus('Napíšte tému.',true);return}
