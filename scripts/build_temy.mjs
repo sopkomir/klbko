@@ -33,7 +33,13 @@ for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.mjs')).sort()) {
       else if (!SHAPE[k](v)) errs.push(`${at}: zlý tvar ${k}`);
     }
     for (const [a] of t.alts ?? []) if (!FORMS.includes(a)) errs.push(`${at}: zlá alternatíva ${a}`);
-    for (const id of t.std ?? []) { const r = svp[+String(id).slice(1)]; if (!r) errs.push(`${at}: neexistuje ${id}`); }
+    const cyc = g => (g <= 3 ? 1 : g <= 5 ? 2 : 3);
+    for (const id of t.std ?? []) {
+      const r = svp[+String(id).slice(1)];
+      if (!r) { errs.push(`${at}: neexistuje ${id}`); continue; }
+      // ŠVP 2023 musí sedieť na cyklus, ŠVP 2015 na ročník (±1, lebo programy učivo rozkladajú inak)
+      if (r[2] != null && (r[0] === '2023' ? r[2] !== cyc(t.grade) : Math.abs(r[2] - t.grade) > 1)) errs.push(`${at}: ${id} nepatrí k ${t.grade}. ročníku`);
+    }
     const g = t.guide;
     if (!(g?.primer && g.steps?.length >= 3 && g.traps?.length >= 2 && g.qa?.length >= 1)) errs.push(`${at}: neúplný sprievodca`);
     if (!(t.method?.goals?.length && t.method.plan?.length)) errs.push(`${at}: neúplná metodika`);
