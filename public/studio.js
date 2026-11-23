@@ -212,9 +212,26 @@ function cleanSvg(str){
   for(const a of [...root.attributes])if(!/^(viewbox|xmlns|preserveaspectratio)$/i.test(a.name))root.removeAttribute(a.name);
   walk(root);root.setAttribute('viewBox','0 0 1200 640');root.setAttribute('preserveAspectRatio','xMidYMid meet');root.setAttribute('aria-hidden','true');
   return root.outerHTML}catch{return null}}
+function pinLayout(sc){
+ const lay=()=>{const W=sc.clientWidth,H=sc.clientHeight;if(!W)return;
+  const pins=[...sc.querySelectorAll(':scope>.pin')].filter(p=>!p.classList.contains('veil'));
+  const B=pins.map(p=>{const w=p.offsetWidth,h=p.offsetHeight,ax=+p.dataset.x/100*W,ay=+p.dataset.y/100*H;return{p,w,h,ax,ay,x:ax,y:ay}});
+  const clamp=b=>{b.x=Math.min(W-b.w/2-4,Math.max(b.w/2+4,b.x));b.y=Math.min(H-b.h/2-4,Math.max(b.h/2+4,b.y))};
+  B.forEach(clamp);
+  for(let it=0;it<120;it++){let moved=false;
+   for(let i=0;i<B.length;i++)for(let j=i+1;j<B.length;j++){const a=B[i],b=B[j],ox=(a.w+b.w)/2+8-Math.abs(a.x-b.x),oy=(a.h+b.h)/2+6-Math.abs(a.y-b.y);
+    if(ox>0&&oy>0){moved=true;if(oy<=ox*1.6){const s=(a.y<=b.y?-1:1)*oy/2;a.y+=s;b.y-=s}else{const s=(a.x<=b.x?-1:1)*ox/2;a.x+=s;b.x-=s}clamp(a);clamp(b)}}
+   if(!moved)break}
+  let svg=sc.querySelector(':scope>svg.leaders');if(!svg){svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','leaders');svg.setAttribute('aria-hidden','true');sc.append(svg)}
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);let out='';
+  B.forEach(b=>{b.p.style.left=b.x+'px';b.p.style.top=b.y+'px';if(Math.hypot(b.x-b.ax,b.y-b.ay)>b.h*.6){const c=getComputedStyle(b.p).getPropertyValue('--c');out+=`<line x1="${b.ax.toFixed(1)}" y1="${b.ay.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="#fff" stroke-width="5" stroke-linecap="round"/><line x1="${b.ax.toFixed(1)}" y1="${b.ay.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" style="stroke:${c}" stroke-width="2.5" stroke-linecap="round"/><circle cx="${b.ax.toFixed(1)}" cy="${b.ay.toFixed(1)}" r="6" fill="#fff"/><circle cx="${b.ax.toFixed(1)}" cy="${b.ay.toFixed(1)}" r="4" style="fill:${c}"/>`}});
+  svg.innerHTML=out};
+ sc._lay=lay;let f;new ResizeObserver(()=>{cancelAnimationFrame(f);f=requestAnimationFrame(lay)}).observe(sc);document.fonts?.ready.then(lay);
+}
 function aiScene(d,c){const lv=c.level,pts=d.points.filter(x=>vis(x,lv)),svg=cleanSvg(d.svg);
  const sc=el('div',{class:'scene ai'});if(svg)sc.innerHTML=svg;else sc.append(el('p',{class:'warn'},'Obrázok sa nepodarilo zobraziť.'));
- const ns=pts.map((x,i)=>{const n=node(x,c,'',i);n.dataset.no=i+1;const lab=el('span',{},c.hide?(c.sheet?'':'?'):txt(x,lv)),pin=el('button',{class:'pin',type:'button',style:`left:${x.x}%;top:${x.y}%;--c:${W(i)}`,'aria-label':'Časť '+(i+1),onclick:()=>{if(n.classList.contains('hid'))n.click()}},el('i',{},i+1),lab);n._pin=pin;if(c.hide)n.addEventListener('click',()=>{lab.textContent=txt(x,lv)});sc.append(pin);return n});
+ const ns=pts.map((x,i)=>{const n=node(x,c,'',i);n.dataset.no=i+1;const lab=el('span',{},c.hide?(c.sheet?'':'?'):norm(x).t),pin=el('button',{class:'pin',type:'button','data-x':x.x,'data-y':x.y,style:`left:${x.x}%;top:${x.y}%;--c:${W(i)}`,'aria-label':'Časť '+(i+1),onclick:()=>{if(n.classList.contains('hid'))n.click()}},el('i',{},i+1),lab);n._pin=pin;if(c.hide)n.addEventListener('click',()=>{lab.textContent=norm(x).t;sc._lay?.()});sc.append(pin);return n});
+ pinLayout(sc);
  return el('div',{class:'dg scenewrap side'},sc,el('div',{class:'strip'},ns))}
 
 const R={
@@ -272,7 +289,8 @@ function waterSVG(){
  <path id="loop" d="${loop}" fill="none" stroke="#e5376b" stroke-width="7" stroke-linecap="round"/><path d="${loop}" fill="none" stroke="#fff" stroke-width="2.200" stroke-dasharray="4 11" stroke-linecap="round"/>
  <path d="M0-20C7-8 13 0 13 8a13 13 0 0 1-26 0C-13 0-7-8 0-20z" data-anim="1" fill="#1f7fe0" stroke="#fff" stroke-width="3"><animateMotion dur="11s" repeatCount="indefinite" path="${loop}"/></path></svg>`}
 function waterScene(d,c){const lv=c.level,s=d.steps.filter(x=>vis(x,lv)),sc=el('div',{class:'scene',html:waterSVG()});
- const ns=s.map((x,i)=>{const n=node(x,c,'',i);n.dataset.no=i+1;const lab=el('span',{},c.hide?(c.sheet?'':'?'):txt(x,lv)),pin=el('button',{class:'pin',type:'button',style:`left:${x.at[0]}%;top:${x.at[1]}%;--c:${W(i)}`,'aria-label':'Krok '+(i+1),onclick:()=>{if(n.classList.contains('hid'))n.click()}},el('i',{},i+1),lab);n._pin=pin;if(c.hide)n.addEventListener('click',()=>{lab.textContent=txt(x,lv)});sc.append(pin);return n});
+ const ns=s.map((x,i)=>{const n=node(x,c,'',i);n.dataset.no=i+1;const lab=el('span',{},c.hide?(c.sheet?'':'?'):norm(x).t),pin=el('button',{class:'pin',type:'button','data-x':x.at[0],'data-y':x.at[1],style:`left:${x.at[0]}%;top:${x.at[1]}%;--c:${W(i)}`,'aria-label':'Krok '+(i+1),onclick:()=>{if(n.classList.contains('hid'))n.click()}},el('i',{},i+1),lab);n._pin=pin;if(c.hide)n.addEventListener('click',()=>{lab.textContent=norm(x).t;sc._lay?.()});sc.append(pin);return n});
+ pinLayout(sc);
  return el('div',{class:'dg scenewrap side'},sc,el('div',{class:'strip'},ns))}
 function moravaSVG(path){let st='';for(let i=0;i<40;i++)st+=`<circle cx="${i*97%1200}" cy="${i*61%230}" r="${1+i%3*.6}" fill="#fff" opacity="${.3+i%4*.18}"/>`;
  let pal='';for(let i=0;i<34;i++)pal+=`<path d="M${820+i*9} 452v-${26+i%3*5}l4-7 4 7v${26+i%3*5}z" fill="#3d2a4a"/>`;
@@ -372,7 +390,7 @@ function openBoard(auto){
  const cap=el('div',{class:'caption',role:'status','aria-live':'polite'});
  const stage=el('div',{class:'stage'}),count=el('span',{class:'count'});
  const close=()=>{clearInterval(timer);document.removeEventListener('keydown',key);root.replaceChildren();if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{})};
- function apply(){nodes.forEach((n,i)=>{n.classList.toggle('veil',i>=step);n.classList.toggle('now',i===step-1);n._pin?.classList.toggle('veil',i>=step)});const cur=nodes[step-1];if(cur){const b=cur.querySelector('.tx b'),sm=cur.querySelector('.tx small');cap.replaceChildren(el('b',{},(b||cur.querySelector('.tx'))?.textContent||''),sm?el('span',{},sm.textContent):'');cap.hidden=false;cur.scrollIntoView?.({block:'nearest',behavior:'smooth'})}else cap.hidden=true;count.textContent=nodes.length?`${Math.min(step,nodes.length)} / ${nodes.length}`:'';stage.querySelectorAll('.dg').forEach(d=>d._draw?.());prevB.disabled=step<=0;nextB.disabled=step>=nodes.length}
+ function apply(){nodes.forEach((n,i)=>{n.classList.toggle('veil',i>=step);n.classList.toggle('now',i===step-1);n._pin?.classList.toggle('veil',i>=step)});stage.querySelectorAll('.scene').forEach(x=>x._lay?.());const cur=nodes[step-1];if(cur){const b=cur.querySelector('.tx b'),sm=cur.querySelector('.tx small');cap.replaceChildren(el('b',{},(b||cur.querySelector('.tx'))?.textContent||''),sm?el('span',{},sm.textContent):'');cap.hidden=false;cur.scrollIntoView?.({block:'nearest',behavior:'smooth'})}else cap.hidden=true;count.textContent=nodes.length?`${Math.min(step,nodes.length)} / ${nodes.length}`:'';stage.querySelectorAll('.dg').forEach(d=>d._draw?.());prevB.disabled=step<=0;nextB.disabled=step>=nodes.length}
  function build(reset){stage.querySelectorAll('.dg').forEach(d=>d._ro?.disconnect());
   const out=renderForm(S.form,data,{level:S.level,hide,width:Math.max(stage.clientWidth,window.innerWidth-40)});stage.replaceChildren(out);
   nodes=[...stage.querySelectorAll('.n:not(.keep)')];if(reset)step=0;apply()}

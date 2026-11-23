@@ -419,3 +419,10 @@ header.top{padding-block:14px 12px;border-bottom:1px solid var(--line);gap:18px}
 .colortools input[type=color]{width:38px;height:38px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer}
 body.student #libBtn,body.student #saveBtn,body.student .topnav{display:none}
 @media (max-width:640px){#libBtn{margin-left:auto}}
+
+/* popisky na obrázku: krátke, bez prekrývania */
+.scene .pin{max-width:min(34%,240px);white-space:normal;z-index:3}
+.scene .pin span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.scene>svg.leaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.easy .scene .pin{font-family:var(--f-body)}
+@media (max-width:640px){.scene .pin{max-width:none;padding:0;background:none;box-shadow:none}.scene .pin span{display:none}.scene .pin i{width:28px;height:28px;box-shadow:0 0 0 2px #fff,0 2px 6px rgba(0,0,0,.3)}}
