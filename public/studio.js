@@ -540,6 +540,76 @@ async function loadShare(){
  const q=new URLSearchParams(location.search);S.topic={...p.t,kind:null,alts:[]};S.form=q.get('f')&&p.t.forms[q.get('f')]?q.get('f'):p.f;S.level=Number(q.get('l'))||p.l||2;S.hide=q.has('h')||!!p.h;paintCanvas();paintLevels();
 }
 
+/* ---------- hra: triedenie, poradie a spájanie (práca rukami) ---------- */
+const gtx=(i,lv)=>{const n=norm(i);return lv===4&&n.e?n.e:n.t};
+function gameTask(form,d,lv){
+ const V=l=>(l||[]).filter(x=>vis(x,lv));
+ const sort=(bins)=>({kind:'sort',bins:bins.filter(b=>b.items.length)});
+ if(form==='mind')return sort(V(d.branches).map(b=>({name:gtx(b,lv),items:V(b.kids).map(x=>gtx(x,lv))})));
+ if(form==='tree')return sort(V(d.root.kids).map(b=>({name:gtx(b,lv),items:V(b.kids).map(x=>gtx(x,lv))})));
+ if(form==='fish')return sort(V(d.groups).map(b=>({name:gtx(b,lv),items:V(b.items).map(x=>gtx(x,lv))})));
+ if(form==='venn')return sort([{name:'Len '+d.a,items:V(d.left).map(x=>gtx(x,lv))},{name:'Spoločné',items:V(d.mid).map(x=>gtx(x,lv))},{name:'Len '+d.b,items:V(d.right).map(x=>gtx(x,lv))}]);
+ if(form==='ttable'){const r=d.rows.filter(r=>vis(r[0],lv)&&vis(r[1],lv));return sort([{name:d.a,items:r.map(x=>gtx(x[0],lv))},{name:d.b,items:r.map(x=>gtx(x[1],lv))}])}
+ if(form==='timeline')return{kind:'order',items:V(d.events).map(x=>(x.y&&!/^\d$/.test(x.y)?x.y+': ':'')+gtx(x,lv))};
+ if(form==='cycle')return{kind:'order',items:V(d.steps).map(x=>gtx(x,lv))};
+ if(form==='scene')return{kind:'order',label:'Zoraď časti tak, ako idú na obrázku po sebe.',items:V(d.points).map(x=>gtx(x,lv)),hint:true};
+ if(form==='cards')return{kind:'pair',pairs:V(d).slice(0,6).map(x=>[x.q,lv===4&&x.e?x.e:x.a])};
+ if(form==='quiz')return{kind:'pair',pairs:V(d).slice(0,6).map(x=>[x.q,x.o[x.k]])};
+ return null;
+}
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function openGame(){
+ const f=S.form,d=S.topic.forms[f];if(!d)return;
+ let task=gameTask(f,d,S.level);
+ if(f==='scene'||!task||(task.kind==='sort'&&task.bins.length<2)||(task.kind==='order'&&task.items.length<3)||(task.kind==='pair'&&task.pairs.length<2)){
+  // náhradná úloha z kartičiek alebo myšlienkovej mapy
+  const alt=['mind','cards','timeline','cycle','venn','tree'].find(k=>S.topic.forms[k]&&k!==f);task=alt?gameTask(alt,S.topic.forms[alt],S.level):null}
+ if(!task){setStatus('Pre túto tému zatiaľ nemáme hru.',true);return}
+ const root=$('#ovRoot'),close=()=>{root.replaceChildren();document.removeEventListener('keydown',esc)},esc=e=>{if(e.key==='Escape')close()};document.addEventListener('keydown',esc);
+ const msg=el('div',{class:'g-msg',role:'status','aria-live':'polite'});
+ let sel=null;const pool=el('div',{class:'g-pool','aria-label':'Kartičky na presúvanie'});
+ const pick=c=>{if(sel)sel.classList.remove('sel');sel=sel===c?null:c;sel?.classList.add('sel')};
+ const chip=(t,key)=>{const c=el('button',{class:'g-chip',type:'button','data-k':key},t);c.addEventListener('click',e=>{e.stopPropagation();if(c.dataset.moved){delete c.dataset.moved;return}const z=c.closest('.g-drop');if(sel&&sel!==c&&z){if(z.classList.contains('one'))pool.append(c);drop(z);return}if(sel&&sel!==c&&c.closest('.g-pool')&&sel.closest('.g-drop')){drop(pool);return}pick(c)});drag(c);return c};
+ const drop=(target)=>{if(!sel)return;target.append(sel);sel.classList.remove('sel','ok','bad');sel=null;msg.textContent=''};
+ function drag(c){let sx,sy,ghost=null,moved=false;
+  c.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY;moved=false;c.setPointerCapture(e.pointerId)});
+  c.addEventListener('pointermove',e=>{if(sx==null)return;if(!moved&&Math.hypot(e.clientX-sx,e.clientY-sy)<8)return;
+   if(!moved){moved=true;ghost=c.cloneNode(true);ghost.classList.add('ghost');document.body.append(ghost);c.classList.add('lift')}
+   ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px';
+   document.querySelectorAll('.g-drop.hover,.g-pool.hover').forEach(x=>x.classList.remove('hover'));ghost.hidden=true;const t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.g-drop,.g-pool');ghost.hidden=false;t?.classList.add('hover')});
+  const end=e=>{if(sx==null)return;sx=null;if(!moved)return;ghost.hidden=true;const t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.g-drop,.g-pool,.g-chip');ghost.remove();c.classList.remove('lift');document.querySelectorAll('.g-drop.hover,.g-pool.hover').forEach(x=>x.classList.remove('hover'));c.dataset.moved='1';setTimeout(()=>delete c.dataset.moved,60);
+   if(!t)return;sel=c;if(t.classList.contains('g-chip')&&t.parentElement.classList.contains('g-order')){t.parentElement.insertBefore(c,t);c.classList.remove('ok','bad');sel=null}else drop(t.classList.contains('g-chip')?t.parentElement:t)};
+  c.addEventListener('pointerup',end);c.addEventListener('pointercancel',()=>{sx=null;ghost?.remove();c.classList.remove('lift')})}
+ let board,check,intro;
+ if(task.kind==='sort'){
+  intro='Roztrieď kartičky do správnych skupín. Ťukni na kartičku a potom na skupinu, alebo ju potiahni.';
+  const all=task.bins.flatMap((b,i)=>b.items.map(t=>[t,i]));shuffle(all).forEach(([t,i])=>pool.append(chip(t,i)));
+  board=el('div',{class:'g-bins'},task.bins.map((b,i)=>{const z=el('div',{class:'g-drop','data-k':i,tabindex:0,role:'button','aria-label':'Skupina '+b.name});z.addEventListener('click',()=>drop(z));z.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();drop(z)}});return el('div',{class:'g-bin',style:'--c:'+W(i)},el('h3',{},b.name),z)}));
+  check=()=>{let ok=0,n=0;board.querySelectorAll('.g-drop').forEach(z=>z.querySelectorAll('.g-chip').forEach(c=>{n++;const good=c.dataset.k===z.dataset.k;c.classList.toggle('ok',good);c.classList.toggle('bad',!good);if(good)ok++;else setTimeout(()=>{pool.append(c);c.classList.remove('bad')},1400)}));return[ok,all.length,n]};
+ }else if(task.kind==='order'){
+  intro=task.label||'Zoraď kartičky v správnom poradí. Potiahni kartičku na iné miesto alebo ťukni na dve kartičky a vymenia sa.';
+  const items=task.items.map((t,i)=>[t,i]);let mix=shuffle(items);if(mix.every((x,i)=>x[1]===i))mix=mix.reverse();
+  const row=el('div',{class:'g-order'});mix.forEach(([t,i])=>row.append(chip(t,i)));
+  row.addEventListener('click',e=>{const c=e.target.closest('.g-chip');if(!c||c===sel)return;if(sel&&sel!==c&&!c.dataset.moved){const a=sel,ph=document.createComment('');a.replaceWith(ph);c.replaceWith(a);ph.replaceWith(c);a.classList.remove('sel');c.classList.remove('sel');sel=null;row.querySelectorAll('.g-chip').forEach(x=>x.classList.remove('ok','bad'));e.stopPropagation()}},true);
+  board=row;
+  check=()=>{let ok=0;const cs=[...row.querySelectorAll('.g-chip')];cs.forEach((c,i)=>{const g=+c.dataset.k===i;c.classList.toggle('ok',g);c.classList.toggle('bad',!g);if(g)ok++});return[ok,cs.length,cs.length]};
+ }else{
+  intro='Spoj otázku so správnou odpoveďou. Ťukni na odpoveď a potom na otázku, alebo ju potiahni.';
+  shuffle(task.pairs.map((p,i)=>[p[1],i])).forEach(([t,i])=>pool.append(chip(t,i)));
+  board=el('div',{class:'g-pairs'},task.pairs.map((p,i)=>{const z=el('div',{class:'g-drop one','data-k':i,tabindex:0,role:'button','aria-label':'Odpoveď na: '+p[0]});z.addEventListener('click',()=>{if(sel&&z.firstChild)pool.append(z.firstChild);drop(z)});z.addEventListener('keydown',e=>{if(e.key==='Enter'){if(sel&&z.firstChild)pool.append(z.firstChild);drop(z)}});return el('div',{class:'g-pair'},el('b',{},p[0]),z)}));
+  check=()=>{let ok=0,n=0;board.querySelectorAll('.g-drop').forEach(z=>{const c=z.querySelector('.g-chip');if(!c)return;n++;const g=c.dataset.k===z.dataset.k;c.classList.toggle('ok',g);c.classList.toggle('bad',!g);if(g)ok++;else setTimeout(()=>{pool.append(c);c.classList.remove('bad')},1400)});return[ok,task.pairs.length,n]};
+ }
+ pool.addEventListener('click',()=>drop(pool));
+ const checkB=el('button',{class:'btn main',type:'button',onclick(){const[ok,all,n]=check();
+  if(ok===all){msg.textContent='Výborne, všetko sedí!';msg.className='g-msg win';confetti()}else msg.textContent=n<all?`Správne ${ok} z ${all}. Ešte nie je všetko na svojom mieste.`:`Správne ${ok} z ${all}. Červené kartičky skús inam.`}},'Skontrolovať');
+ const again=el('button',{class:'btn',type:'button',onclick:()=>{close();openGame()}},'Znova');
+ const ov=el('div',{class:'ov game',role:'dialog','aria-modal':'true','aria-label':'Zahraj sa'},
+  el('div',{class:'bar noprint'},el('b',{},'Zahraj sa: '+S.topic.title),el('span',{class:'spacer'}),again,el('button',{class:'btn',type:'button',onclick:close},'Zavrieť')),
+  el('div',{class:'g-wrap'},el('p',{class:'g-intro'},intro),task.kind==='order'?'':pool,board,el('div',{class:'g-foot'},checkB,msg)));
+ root.replaceChildren(ov);
+ function confetti(){if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;const box=el('div',{class:'g-conf','aria-hidden':'true'});for(let i=0;i<40;i++){const s=el('i',{style:`left:${Math.random()*100}%;background:${W(i)};animation-delay:${Math.random()*.4}s;transform:rotate(${Math.random()*360}deg)`});box.append(s)}ov.append(box);setTimeout(()=>box.remove(),2200)}
+}
+
 /* ---------- knižnica pripravených tém ---------- */
 let LIBX=[];
 async function openLibId(id){setStatus('Otváram pripravenú tému…');try{openLibTopic(await http('/api/temy?id='+encodeURIComponent(id)))}catch{setStatus('Tému sa nepodarilo otvoriť.',true)}}
@@ -555,7 +625,7 @@ function paintSamples(){
 function openCatalog(){
  const by={};LIBX.forEach(x=>(by[x.subject]=by[x.subject]||[]).push(x));
  const body=el('div',{class:'sharebox lib catalog'},el('p',{},'Témy sú pripravené vopred a otvoria sa hneď, bez čakania na AI. Ak pod zadaním pridáte poznámky o svojej triede, AI vybranú tému upraví na mieru.'),
-  Object.entries(by).map(([sub,l])=>el('section',{},el('h3',{},sub),el('div',{class:'chips'},l.sort((a,b)=>a.grade-b.grade).map(x=>el('button',{class:'chip',type:'button',onclick:()=>{close();$('#fSubject').value=x.subject;$('#fGrade').value=x.grade;$('#fTopic').value=x.title;paintSamples();openLibId(x.id)}},x.title,el('small',{},' '+x.grade+'.')))))));
+  Object.entries(by).map(([sub,l])=>el('section',{},el('h3',{},sub),el('div',{class:'tcards'},l.sort((a,b)=>a.grade-b.grade).map(x=>el('button',{class:'tcard',type:'button',onclick:()=>{close();$('#fSubject').value=x.subject;$('#fGrade').value=x.grade;$('#fTopic').value=x.title;paintSamples();openLibId(x.id)}},x.img?el('img',{src:'/nahlady/'+x.id+'.jpg',alt:'',loading:'lazy',width:360,height:192}):el('span',{class:'noimg'},x.title.slice(0,1)),el('b',{},x.title),el('small',{},x.grade+'. ročník')))))));
  const close=overlay('Hotové témy',body)}
 
 /* ---------- štart ---------- */
@@ -568,7 +638,7 @@ function loadTopic(k){S.key=k;S.topic=TOPICS[k];S.form=recOf(S.topic);if(!S.topi
  $('#fSubject').addEventListener('change',paintSamples);$('#fGrade').addEventListener('change',paintSamples);
  if(!window.KLBKO_SHARE)http('/api/temy').then(r=>{LIBX=r.items||[];paintSamples()}).catch(()=>{});
  $('#boardBtn').append(ic('screen',''),'Na tabuľu');$('#printBtn').append(ic('print',''),'Tlač');
- $('#boardBtn').addEventListener('click',()=>openBoard());$('#playBtn').append(ic('cycle',''),'Prehrať');$('#playBtn').addEventListener('click',()=>openBoard(true));$('#shareBtn').append(ic('people',''),'Pre žiakov');$('#shareBtn').addEventListener('click',()=>openShare());$('#printBtn').addEventListener('click',openPrint);
+ $('#boardBtn').addEventListener('click',()=>openBoard());$('#playBtn').append(ic('cycle',''),'Prehrať');$('#gameBtn').append(ic('star',''),'Zahraj sa');$('#gameBtn').addEventListener('click',openGame);$('#playBtn').addEventListener('click',()=>openBoard(true));$('#shareBtn').append(ic('people',''),'Pre žiakov');$('#shareBtn').addEventListener('click',()=>openShare());$('#printBtn').addEventListener('click',openPrint);
  $('#hideBtn').addEventListener('click',()=>{S.hide=!S.hide;paintLevels();paintCanvas()});
  $('#fGoal').addEventListener('change',e=>{S.goal=e.target.value;const r=recOf(S.topic);if(S.topic.forms[r])S.form=r;paintAll()});
  $('#briefForm').addEventListener('submit',e=>{e.preventDefault();const title=$('#fTopic').value.trim();if(!title){setStatus('Napíšte tému.',true);return}

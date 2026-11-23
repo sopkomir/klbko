@@ -6,7 +6,7 @@ type Topic = { id: string; title: string; subject: string; grade: number; kind: 
 const topics = (db as unknown as { topics: Topic[] }).topics;
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 
-export const libIndex = () => topics.map(t => ({ id: t.id, title: t.title, subject: t.subject, grade: t.grade }));
+export const libIndex = () => topics.map(t => ({ id: t.id, title: t.title, subject: t.subject, grade: t.grade, img: !!t.forms.scene }));
 
 /** Nájde tému podľa názvu (aj podľa iných pomenovaní), predmetu a ročníka. Ročník môže byť o jeden vedľa. */
 export function libFind(title: string, subject: string, grade: number): Topic | undefined {

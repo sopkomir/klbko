@@ -437,3 +437,69 @@ body.student #libBtn,body.student #saveBtn,body.student .topnav{display:none}
 .chip.more{border-style:dashed;font-weight:600}
 .catalog section{margin-top:14px}.catalog h3{font-size:15px;margin:0 0 8px}
 .g-tips{border-left:4px solid var(--wool)}.g-tips ul{margin:0;padding-left:20px;display:grid;gap:6px}
+/* katalóg s ilustráciami */
+.catalog{max-width:1100px}
+.tcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.tcard{display:grid;gap:4px;text-align:left;padding:8px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--fg);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.tcard:hover,.tcard:focus-visible{transform:translateY(-2px);box-shadow:0 6px 18px rgba(23,36,77,.12)}
+.tcard img,.tcard .noimg{width:100%;height:auto;aspect-ratio:15/8;border-radius:9px;object-fit:cover;background:#eef2f8}
+.tcard .noimg{display:grid;place-items:center;font-size:42px;font-weight:700;color:var(--wool)}
+.tcard b{font-size:14px;line-height:1.25}.tcard small{font-size:12px;color:var(--muted)}
+/* návod */
+.nv{max-width:980px;margin:0 auto;padding:24px 16px 64px;font-family:var(--f-body);color:var(--fg);line-height:1.55}
+.nv-top{display:flex;justify-content:space-between;gap:12px;margin-bottom:24px}
+.nv a.btn{text-decoration:none;display:inline-flex;align-items:center}
+.nv h1{font-family:var(--f-display);font-size:clamp(30px,5vw,44px);line-height:1.1;margin:0 0 12px}
+.nv h2{font-family:var(--f-display);font-size:24px;margin:40px 0 12px}
+.nv h3{font-size:17px;margin:20px 0 8px}
+.nv-lead{font-size:18px;color:var(--muted);max-width:68ch}
+.nv-steps{display:grid;gap:10px;padding-left:22px}
+.nv-table{display:grid;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.nv-row{display:grid;grid-template-columns:1.1fr 1.4fr 1.3fr 2fr;gap:12px;padding:12px 14px;border-top:1px solid var(--line);font-size:14.5px}
+.nv-row:first-child{border-top:0}.nv-head{background:var(--surface-2);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+.nv-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:0}
+.nv-tools div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.nv-tools dt{font-weight:700;margin-bottom:4px}.nv-tools dd{margin:0;font-size:14.5px;color:var(--muted)}
+.nv-quote{background:var(--wool-soft);border-radius:18px;padding:8px 22px 20px;margin-top:40px}
+.nv-quote blockquote{font-family:var(--f-display);font-size:clamp(22px,3.4vw,30px);line-height:1.25;margin:8px 0 16px;color:var(--wool-ink)}
+.nv-quote cite{display:block;font-family:var(--f-body);font-size:14px;font-style:normal;color:var(--muted);margin-top:8px}
+.nv-herbart,.nv-tips{display:grid;gap:8px;padding-left:22px}
+.nv-scen{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.nv-scen article{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 16px 12px}
+.nv-scen ol{padding-left:20px;font-size:14.5px;display:grid;gap:4px}
+.nv-note ul{display:grid;gap:6px;padding-left:22px}
+@media (max-width:720px){.nv-row{grid-template-columns:1fr}.nv-head{display:none}.nv-row b{font-size:16px}}
+@media print{.nv-top{display:none}.nv{padding:0}.nv-quote{background:none;border:2px solid #ddd}}
+#helpBtn{text-decoration:none;display:inline-flex;align-items:center;margin-left:auto}#helpBtn+#libBtn{margin-left:0}body.student #helpBtn{display:none}
+/* hra: triedenie, poradie, spájanie */
+.ov.game{background:var(--bg)}
+.g-wrap{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:16px}
+.g-intro{margin:0;font-size:17px;color:var(--muted)}
+.g-pool,.g-order{display:flex;flex-wrap:wrap;gap:10px;min-height:64px;padding:12px;border:2px dashed var(--line);border-radius:16px;background:var(--surface)}
+.g-order{border-style:solid}
+.g-chip{font:600 17px/1.3 var(--f-easy);padding:12px 16px;min-height:52px;border-radius:14px;border:2px solid var(--line);background:var(--node);color:var(--fg);cursor:grab;touch-action:none;user-select:none;text-align:left;max-width:100%;transition:transform .12s,box-shadow .12s}
+.g-chip:hover{box-shadow:0 4px 12px rgba(23,36,77,.12)}
+.g-chip.sel{border-color:var(--wool);box-shadow:0 0 0 3px var(--wool-soft);transform:translateY(-2px)}
+.g-chip.lift{opacity:.35}
+.g-chip.ok{border-color:var(--ok);background:var(--ok-soft)}
+.g-chip.bad{border-color:var(--bad);background:var(--bad-soft);animation:g-shake .4s}
+.g-chip.ghost{position:fixed;z-index:9999;pointer-events:none;transform:translate(-50%,-60%) rotate(-3deg);box-shadow:0 12px 28px rgba(0,0,0,.22)}
+.g-bins{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.g-bin{border-radius:16px;border:2px solid var(--c);background:var(--surface);overflow:hidden}
+.g-bin h3{margin:0;padding:10px 14px;font-size:17px;background:color-mix(in srgb,var(--c) 18%,var(--surface))}
+.g-drop{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;min-height:120px;padding:12px;transition:background .15s;cursor:pointer}
+.g-drop.hover,.g-drop:focus-visible{background:var(--wool-soft);outline:none}
+.g-pairs{display:grid;gap:10px}
+.g-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.g-pair b{font-size:16px}
+.g-drop.one{min-height:64px;border:2px dashed var(--line);border-radius:12px;padding:6px}
+.g-foot{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.g-msg{font-weight:600;font-size:17px}.g-msg.win{color:var(--ok)}
+.g-conf{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:9998}
+.g-conf i{position:absolute;top:-20px;width:12px;height:18px;border-radius:3px;animation:g-fall 1.8s ease-in forwards}
+@keyframes g-fall{to{top:105%;transform:rotate(540deg)}}
+@keyframes g-shake{25%{translate:-6px 0}75%{translate:6px 0}}
+@media (max-width:640px){.g-pair{grid-template-columns:1fr}.g-chip{font-size:16px}}
+@media (prefers-reduced-motion:reduce){.g-chip.bad{animation:none}}
+.sharebox.catalog{max-width:1120px;width:calc(100% - 32px)}#helpBtn{color:var(--fg);font-weight:600}.ov.game .bar .spacer{flex:1}
+.nv a.btn{color:var(--fg)}

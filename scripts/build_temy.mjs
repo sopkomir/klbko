@@ -44,6 +44,10 @@ for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.mjs')).sort()) {
     if (!(g?.primer && g.steps?.length >= 3 && g.traps?.length >= 2 && g.qa?.length >= 1)) errs.push(`${at}: neúplný sprievodca`);
     if (!(t.method?.goals?.length && t.method.plan?.length)) errs.push(`${at}: neúplná metodika`);
     JSON.stringify(t.forms, (k, v) => { if (k === 'ic' && !ICONS.has(v)) errs.push(`${at}: neznámy piktogram ${v}`); return v; });
+    for (const m of (t.forms?.scene?.svg ?? '').matchAll(/<animate\w*\b[^>]*>/g)) {
+      const kt = /keyTimes="([^"]+)"/.exec(m[0]), vs = /values="([^"]+)"/.exec(m[0]);
+      if (kt) { const k = kt[1].split(';').map(Number); if (!vs || vs[1].split(';').length !== k.length || k[0] !== 0 || k.at(-1) !== 1) errs.push(`${at}: chybné keyTimes v animácii`); }
+    }
     if (topics.some(x => x.id === t.id)) errs.push(`${at}: duplicitné id`);
     topics.push(t);
   }
