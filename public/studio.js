@@ -328,6 +328,7 @@ function paintCanvas(){
  const w=Math.max(200,c.clientWidth-36);
  if(S.hide&&!['cards','quiz','vvn'].includes(S.form))head.push(el('div',{class:'note-hide'},'Ťuknite na uzol a odkryte ho.'));
  c.replaceChildren(...head,renderForm(S.form,data,{level:S.level,hide:S.hide,width:w}));
+ if(S.form==='scene'&&data.svg&&!document.body.classList.contains('student')){const ct=colorTools(data);if(ct)c.append(ct)}
  flipPlay(snap);
 }
 function paintWhy(){
@@ -437,26 +438,68 @@ const base=()=>({title:S.topic.title,subject:S.topic.subject,grade:S.topic.grade
 function genTopic(title,subject,grade,notes){
  ask({type:'topic',title,subject,grade,notes},v=>{const f=v.form;if(f==='timeline'&&subject==='Dejepis')v.data.scene='morava';
   const t={title,subject,grade,notes,kind:v.kind,why:{[f]:v.why},alts:v.alts,picked:v.standards,method:null,forms:{[f]:v.data}};
-  S.key='vlastna';S.topic=t;S.form=recOf(t);if(!t.forms[S.form])S.form=f;paintAll();setTimeout(()=>{if(!t.guide)genGuide(true,()=>{if(!t.forms.scene&&S.topic===t)genForm('scene','Kreslím animovaný obrázok. ')})},0)});
+  S.key='vlastna';S.topic=t;savedId=null;markDirty();S.form=recOf(t);if(!t.forms[S.form])S.form=f;paintAll();setTimeout(()=>{if(!t.guide)genGuide(true,()=>{if(!t.forms.scene&&S.topic===t)genForm('scene','Kreslím animovaný obrázok. ')})},0)});
 }
-function genGuide(q,then){const t=S.topic;ask({...base(),type:'guide'},v=>{t.guide=v.guide;if(S.topic===t)paintGuide();then?.()},q===true)}
-function genForm(form,quiet){const t=S.topic;ask({...base(),type:'form',form},v=>{if(form==='timeline'&&t.subject==='Dejepis')v.data.scene='morava';t.forms[form]=v.data;if(S.form===form)paintAll();else paintRail()},quiet)}
+function genGuide(q,then){const t=S.topic;ask({...base(),type:'guide'},v=>{t.guide=v.guide;markDirty();if(S.topic===t)paintGuide();then?.()},q===true)}
+function genForm(form,quiet){const t=S.topic;ask({...base(),type:'form',form},v=>{if(form==='timeline'&&t.subject==='Dejepis')v.data.scene='morava';t.forms[form]=v.data;markDirty();if(S.form===form)paintAll();else paintRail()},quiet)}
 
 /* ---------- zdieľanie so žiakmi ---------- */
-function openShare(){
- const t=S.topic,data=t.forms[S.form];if(!data)return;
- const pay={t:{title:t.title,subject:t.subject,grade:t.grade,forms:{[S.form]:data}},f:S.form,l:S.level,h:S.hide};
- const body=el('div',{class:'sharebox'},el('p',{},'Pripravujem odkaz…'));
- const close=()=>$('#ovRoot').replaceChildren();
- $('#ovRoot').replaceChildren(el('div',{class:'ov print',role:'dialog','aria-modal':'true','aria-label':'Odkaz pre žiakov'},el('div',{class:'bar noprint'},el('b',{},'Pre žiakov'),el('button',{class:'btn',type:'button',onclick:close},'Zavrieť')),body));
- const show=u=>{const inp=el('input',{id:'shareUrl',readonly:true,value:u});body.replaceChildren(el('img',{src:'/api/qr?u='+encodeURIComponent(u),alt:'QR kód odkazu',width:340,height:340}),el('p',{},'Žiaci naskenujú kód alebo otvoria odkaz. Nepotrebujú účet.'),inp,el('button',{class:'btn main',type:'button',onclick(ev){navigator.clipboard?.writeText(u).then(()=>{ev.target.textContent='Skopírované'}).catch(()=>inp.select())}},'Kopírovať odkaz'))};
- http('/api/share',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(pay)}).then(r=>show(location.origin+'/z/'+r.id)).catch(()=>{const h=btoa(unescape(encodeURIComponent(JSON.stringify(pay))));show(location.origin+'/z/m#'+h)});
-}
+/* ---------- ukladanie príprav ---------- */
+const LIB='klbko-pripravy';
+const libGet=()=>{try{return JSON.parse(localStorage.getItem(LIB)||'[]')}catch{return[]}};
+const libPut=l=>{try{localStorage.setItem(LIB,JSON.stringify(l.slice(0,60)))}catch{}};
+function prepPayload(){const t=S.topic,keep=['title','subject','grade','notes','kind','why','alts','picked','guide','method','forms'];
+ const tt={};keep.forEach(k=>{if(t[k]!==undefined)tt[k]=t[k]});return{kind:'prep',v:1,t:tt,f:S.form,l:S.level,h:S.hide,at:new Date().toISOString()}}
+let savedId=null,savedFor=null,dirty=true;
+function markDirty(){dirty=true;const b=$('#saveBtn');if(b&&!document.body.classList.contains('student'))b.classList.add('main')}
+async function savePrep(){
+ if(!dirty&&savedId&&savedFor===S.topic)return savedId;
+ const pay=prepPayload();let id;
+ try{id=(await http('/api/share',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(pay)})).id}
+ catch{id='m-'+Date.now().toString(36);try{localStorage.setItem('klbko-p-'+id,JSON.stringify(pay))}catch{}}
+ const l=libGet().filter(x=>!(x.title===pay.t.title&&x.subject===pay.t.subject&&x.grade===pay.t.grade));
+ l.unshift({id,title:pay.t.title,subject:pay.t.subject,grade:pay.t.grade,at:pay.at});libPut(l);
+ savedId=id;savedFor=S.topic;dirty=false;$('#saveBtn')?.classList.remove('main');return id}
+async function loadPrep(id){
+ let p=null;if(id.startsWith('m-')){try{p=JSON.parse(localStorage.getItem('klbko-p-'+id))}catch{}}else{try{p=await http('/api/share/'+encodeURIComponent(id))}catch{}}
+ if(!p?.t?.forms)return false;
+ S.key='ulozena';S.topic={...p.t};S.form=p.f&&p.t.forms[p.f]?p.f:Object.keys(p.t.forms)[0];S.level=p.l||2;S.hide=false;savedId=id;savedFor=S.topic;dirty=false;paintAll();return true}
+const fmt=d=>{try{return new Date(d).toLocaleDateString('sk-SK',{day:'numeric',month:'numeric',year:'numeric'})}catch{return''}};
+function overlay(title,body){const close=()=>$('#ovRoot').replaceChildren();$('#ovRoot').replaceChildren(el('div',{class:'ov print',role:'dialog','aria-modal':'true','aria-label':title},el('div',{class:'bar noprint'},el('b',{},title),el('button',{class:'btn',type:'button',onclick:close},'Zavrieť')),body));return close}
+function linkBox(u,label){const inp=el('input',{readonly:true,value:u,'aria-label':label});return el('div',{class:'linkrow'},inp,el('button',{class:'btn',type:'button',onclick(ev){navigator.clipboard?.writeText(u).then(()=>{ev.target.textContent='Skopírované'}).catch(()=>inp.select())}},'Kopírovať'))}
+function openLibrary(){
+ const list=libGet(),body=el('div',{class:'sharebox lib'});
+ const close=overlay('Moje prípravy',body);
+ if(!list.length){body.append(el('p',{},'Zatiaľ tu nič nie je. Prípravu uložíte tlačidlom Uložiť pod zadaním.'));return}
+ body.append(el('p',{class:'warn'},'Zoznam je uložený v tomto prehliadači. Na inom zariadení otvorte prípravu cez jej odkaz pre učiteľa.'),
+  el('ul',{class:'liblist'},list.map(x=>el('li',{},el('div',{},el('b',{},x.title),el('small',{},`${x.subject} · ${x.grade}. ročník · ${fmt(x.at)}`)),
+   el('div',{class:'libbtns'},el('button',{class:'btn main',type:'button',onclick:async()=>{close();if(!await loadPrep(x.id))setStatus('Prípravu sa nepodarilo otvoriť.',true)}},'Otvoriť'),
+    el('button',{class:'btn',type:'button',onclick(){libPut(libGet().filter(y=>y.id!==x.id));openLibrary()}},'Odstrániť zo zoznamu'))))))}
+async function openSave(){
+ const body=el('div',{class:'sharebox'},el('p',{},'Ukladám prípravu…'));overlay('Príprava je uložená',body);
+ const id=await savePrep();const local=id.startsWith('m-');
+ body.replaceChildren(el('p',{},'Nájdete ju v časti Moje prípravy v tomto prehliadači.'),
+  local?el('p',{class:'warn'},'Úložisko teraz nie je dostupné, príprava je len v tomto prehliadači.'):[el('p',{},'Odkaz pre vás, otvorí prípravu na úpravu aj na inom zariadení:'),linkBox(location.origin+'/?m='+id,'Odkaz pre učiteľa'),el('p',{class:'warn'},'Tento odkaz nedávajte žiakom. Pre nich je tlačidlo Pre žiakov.')])}
+async function openShare(){
+ const t=S.topic;if(!t.forms[S.form])return;
+ const body=el('div',{class:'sharebox'},el('p',{},'Pripravujem odkaz…'));overlay('Pre žiakov',body);
+ const id=await savePrep();
+ const u=id.startsWith('m-')?location.origin+'/z/m#'+btoa(unescape(encodeURIComponent(JSON.stringify({t:{title:t.title,subject:t.subject,grade:t.grade,forms:{[S.form]:t.forms[S.form]}},f:S.form,l:S.level,h:S.hide})))):location.origin+'/z/'+id+'?f='+S.form+'&l='+S.level+(S.hide?'&h=1':'');
+ body.replaceChildren(el('img',{src:'/api/qr?u='+encodeURIComponent(u),alt:'QR kód odkazu',width:340,height:340}),el('p',{},'Žiaci naskenujú kód alebo otvoria odkaz. Nepotrebujú účet a odkaz funguje aj neskôr, napríklad pri opakovaní doma.'),linkBox(u,'Odkaz pre žiakov'))}
+/* úprava farieb animácie */
+function colorTools(d){
+ const cnt={};(d.svg.match(/#[0-9a-f]{6}\b|#[0-9a-f]{3}\b/gi)||[]).forEach(c=>{c=c.toLowerCase();cnt[c]=(cnt[c]||0)+1});
+ const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,10).map(x=>x[0]);if(!top.length)return null;
+ const full=c=>c.length===4?'#'+[...c.slice(1)].map(x=>x+x).join(''):c;
+ return el('div',{class:'colortools noprint'},el('span',{},'Farby obrázka:'),top.map(c=>{const i=el('input',{type:'color',value:full(c),'aria-label':'Zmeniť farbu '+c,title:'Zmeniť farbu'});
+  i.addEventListener('change',()=>{d.svg=d.svg.replace(new RegExp(c.replace('#','#')+'(?![0-9a-f])','gi'),i.value);markDirty();paintCanvas()});return i}),
+  el('button',{class:'btn',type:'button',onclick(){const bg=top.find(c=>/<rect[^>]*fill="/i.test(d.svg)&&new RegExp('<rect[^>]*fill="'+c+'"','i').test(d.svg))||top[0];const l=parseInt(full(bg).slice(1),16),lum=((l>>16)*.3+((l>>8)&255)*.59+(l&255)*.11);d.svg=d.svg.replace(new RegExp(bg+'(?![0-9a-f])','gi'),lum<128?'#eef4fb':'#14213d');markDirty();paintCanvas()}},'Prepnúť svetlé a tmavé pozadie'))}
+
 async function loadShare(){
  document.body.classList.add('student');let p=null;
  try{const h=location.hash.slice(1);if(h)p=JSON.parse(decodeURIComponent(escape(atob(h))));else p=await http('/api/share/'+encodeURIComponent(window.KLBKO_SHARE))}catch{}
  if(!p?.t?.forms){$('#canvas').replaceChildren(el('h2',{},'Materiál sa nenašiel'),el('p',{},'Požiadajte učiteľa o nový odkaz.'));return}
- S.topic={...p.t,kind:null,alts:[]};S.form=p.f;S.level=p.l||2;S.hide=!!p.h;paintCanvas();paintLevels();
+ const q=new URLSearchParams(location.search);S.topic={...p.t,kind:null,alts:[]};S.form=q.get('f')&&p.t.forms[q.get('f')]?q.get('f'):p.f;S.level=Number(q.get('l'))||p.l||2;S.hide=q.has('h')||!!p.h;paintCanvas();paintLevels();
 }
 
 /* ---------- štart ---------- */
@@ -467,14 +510,15 @@ function loadTopic(k){S.key=k;S.topic=TOPICS[k];S.form=recOf(S.topic);if(!S.topi
  $('#fGoal').replaceChildren(...GOALS.map(([v,n])=>el('option',{value:v},n)));
  $('#samples').append(el('span',{},'Vyskúšajte:'),...Object.entries(TOPICS).map(([k,t])=>el('button',{class:'chip',type:'button','data-k':k,onclick:()=>loadTopic(k)},t.title)));
  $('#boardBtn').append(ic('screen',''),'Na tabuľu');$('#printBtn').append(ic('print',''),'Tlač');
- $('#boardBtn').addEventListener('click',()=>openBoard());$('#playBtn').append(ic('cycle',''),'Prehrať');$('#playBtn').addEventListener('click',()=>openBoard(true));$('#shareBtn').append(ic('people',''),'Pre žiakov');$('#shareBtn').addEventListener('click',openShare);$('#printBtn').addEventListener('click',openPrint);
+ $('#boardBtn').addEventListener('click',()=>openBoard());$('#playBtn').append(ic('cycle',''),'Prehrať');$('#playBtn').addEventListener('click',()=>openBoard(true));$('#shareBtn').append(ic('people',''),'Pre žiakov');$('#shareBtn').addEventListener('click',()=>openShare());$('#printBtn').addEventListener('click',openPrint);
  $('#hideBtn').addEventListener('click',()=>{S.hide=!S.hide;paintLevels();paintCanvas()});
  $('#fGoal').addEventListener('change',e=>{S.goal=e.target.value;const r=recOf(S.topic);if(S.topic.forms[r])S.form=r;paintAll()});
  $('#briefForm').addEventListener('submit',e=>{e.preventDefault();const title=$('#fTopic').value.trim();if(!title){setStatus('Napíšte tému.',true);return}
   const subj=$('#fSubject').value,gr=Number($('#fGrade').value),k=Object.keys(TOPICS).find(k=>TOPICS[k].title.toLowerCase()===title.toLowerCase()&&TOPICS[k].subject===subj&&TOPICS[k].grade===gr);if(k){loadTopic(k);return}
   genTopic(title,subj,gr,$('#fNotes').value)});
  let rw;window.addEventListener('resize',()=>{cancelAnimationFrame(rw);rw=requestAnimationFrame(()=>{if(!$('#ovRoot').firstChild&&S.form==='cycle')paintCanvas()})});
- if(!window.KLBKO_SHARE)paintAll();
+ if(!window.KLBKO_SHARE){paintAll();const m=new URLSearchParams(location.search).get('m');if(m)loadPrep(m).then(ok=>{if(!ok)setStatus('Uloženú prípravu sa nepodarilo nájsť.',true)})}
+ $('#libBtn').append(ic('book',''),'Moje prípravy');$('#libBtn').addEventListener('click',openLibrary);$('#saveBtn').append(ic('star',''),'Uložiť');$('#saveBtn').addEventListener('click',openSave);
  if(window.KLBKO_SHARE)loadShare();
 })();
 
