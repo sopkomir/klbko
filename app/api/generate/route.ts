@@ -4,7 +4,8 @@ import { AiError, askJson } from '@/lib/ai';
 import { hasStore, load, save } from '@/lib/store';
 import { findMethod, methodById } from '@/lib/metodiky';
 import { byIds, find, type Program } from '@/lib/svp';
-import { FORMS, KIND, cleanForm, cleanTopic, formPrompt, guidePrompt, topicPrompt, type Q } from '@/lib/prompts';
+import { FORMS, KIND, adaptPrompt, cleanForm, cleanTopic, formPrompt, guidePrompt, topicPrompt, type Q } from '@/lib/prompts';
+import { libFind, libFull } from '@/lib/temy';
 
 export const maxDuration = 60;
 const hits = new Map<string, { day: string; n: number }>();
@@ -27,6 +28,8 @@ export async function POST(req: NextRequest) {
   if (!['topic', 'form', 'guide'].includes(type) || !title || !(grade >= 1 && grade <= 9)) return bad('Doplňte tému, predmet a ročník.');
   const q: Q = { title, subject, grade, notes: String(b?.notes ?? ''), form: b?.form };
   if (type === 'form' && !FORMS.includes(String(q.form))) return bad('Neznáma podoba.');
+  const lib = type === 'topic' ? libFind(title, subject, grade) : undefined;
+  if (lib && !q.notes?.trim()) return NextResponse.json({ library: libFull(lib) });
   const key = JSON.stringify([type, title.toLowerCase(), subject, grade, q.form, q.notes]);
   if (cache.has(key)) return NextResponse.json(cache.get(key));
   const shared = !q.notes && hasStore() ? 'cache/' + createHash('sha256').update(key).digest('hex').slice(0, 32) + '.json' : null;
@@ -37,11 +40,20 @@ export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0] ?? 'local', day = new Date().toISOString().slice(0, 10);
   const u = hits.get(ip);
   const n = u?.day === day ? u.n : 0;
-  if (n >= Number(process.env.DAILY_LIMIT || 60)) return bad('Dnešný limit je vyčerpaný. Skúste to zajtra.', 429);
+  if (n >= Number(process.env.DAILY_LIMIT || 60)) return lib ? NextResponse.json({ library: libFull(lib), note: 'Dnešný limit úprav je vyčerpaný, otvoril som pripravenú verziu.' }) : bad('Dnešný limit je vyčerpaný. Skúste to zajtra.', 429);
   hits.set(ip, { day, n: n + 1 });
   try {
     let out: unknown;
-    if (type === 'topic') {
+    if (lib) {
+      const full = libFull(lib), form = lib.rec;
+      try {
+        const { value, provider } = await askJson(adaptPrompt(q, form, lib.forms[form]), x => !!cleanForm(form, x?.data));
+        out = { provider, library: full, adapted: { form, data: cleanForm(form, value.data)!.data, tips: (Array.isArray(value.tips) ? value.tips : []).slice(0, 4).map(String) } };
+      } catch (e) {
+        console.error('Úprava témy zlyhala:', e);
+        return NextResponse.json({ library: full, note: 'AI teraz tému neupravila, otvoril som pripravenú verziu. Úpravu skúste neskôr.' });
+      }
+    } else if (type === 'topic') {
       const cands = (['2023', '2015'] as Program[]).flatMap(program => find({ title, subject, grade, program, notes: q.notes }, 15).items);
       const { value: v, provider } = await askJson(topicPrompt(q, cands), x => !!cleanTopic(x));
       const allowed = new Set(cands.map(c => c.id));

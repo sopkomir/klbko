@@ -77,3 +77,9 @@ export function cleanForm(f: string | undefined, input: any): { form: string; da
 export function cleanTopic(x: any): { form: string; data: any } | null {
   return cleanForm(undefined, x?.data ?? x);
 }
+/** Úprava hotovej témy z knižnice podľa toho, čo učiteľ napísal o svojej triede. */
+export const adaptPrompt = (q: Q, form: string, data: unknown) => `${head(q)}
+Máš hotovú, odborne skontrolovanú pomôcku v podobe ${form}:
+${JSON.stringify(data).slice(0, 9000)}
+Uprav ju pre triedu, ktorú opisujú poznámky učiteľa. Fakty nemeň a nepridávaj nové tvrdenia, ktorými si nie si istý. Môžeš zjednodušiť alebo rozšíriť texty, presunúť úrovne "l", vylepšiť jednoduché verzie "e", doplniť príklady blízke žiakom a vynechať, čo sa pre triedu nehodí. Zachovaj presne rovnaký tvar JSON.
+Odpovedz len JSON objektom: {"data":upravená pomôcka v rovnakom tvare,"tips":["3 krátke konkrétne rady, ako tému učiť práve v tejto triede"]}`;

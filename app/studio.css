@@ -431,3 +431,9 @@ body.student #libBtn,body.student #saveBtn,body.student .topnav{display:none}
 .scene .motion{position:absolute;right:10px;bottom:10px;z-index:4;min-height:36px;border-radius:99px;border:1px solid rgba(17,26,51,.15);background:rgba(255,255,255,.92);color:#111a33;font:600 13px var(--f-body);padding:6px 12px}
 .scene.paused *{animation-play-state:paused!important}
 .sheet .scene .motion{display:none}
+/* knižnica hotových tém */
+.chip small{font-size:12px;color:var(--muted);margin-left:2px}
+.chip.on{border-color:var(--wool);box-shadow:inset 0 0 0 1px var(--wool)}
+.chip.more{border-style:dashed;font-weight:600}
+.catalog section{margin-top:14px}.catalog h3{font-size:15px;margin:0 0 8px}
+.g-tips{border-left:4px solid var(--wool)}.g-tips ul{margin:0;padding-left:20px;display:grid;gap:6px}

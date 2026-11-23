@@ -158,7 +158,7 @@ TOPICS.morava.forms.timeline.scene='morava';TOPICS.bunka.forms.venn.scene='cells
 
 /* ---------- stav ---------- */
 const S={key:'kolobeh',topic:TOPICS.kolobeh,form:'cycle',level:2,hide:false,goal:'vyklad',prog:'v2023',busy:null};
-const recOf=t=>S.goal==='opakovanie'||S.goal==='fixacia'?'cards':S.goal==='aktivacia'?'vvn':KIND[t.kind]?.f||t.rec||'mind';
+const recOf=t=>S.goal==='opakovanie'||S.goal==='fixacia'?'cards':S.goal==='aktivacia'?'vvn':t.rec||KIND[t.kind]?.f||'mind';
 const norm=i=>typeof i==='string'?{t:i}:i;
 const vis=(i,lv)=>{const l=norm(i).l||1;return lv===4?l<=1:l<=lv};
 const txt=(i,lv)=>{i=norm(i);return lv===4?(i.e||i.t):i.t};
@@ -175,7 +175,7 @@ function threads(host,links,o={}){
   const ax=A.left-hr.left,ay=A.top-hr.top,bx=B.left-hr.left,by=B.top-hr.top;
   const ac=[ax+A.width/2,ay+A.height/2],bc=[bx+B.width/2,by+B.height/2];
   const dx=bc[0]-ac[0],dy=bc[1]-ac[1];let p,q,c1,c2;
-  if(mode==='h'||Math.abs(dx)/Math.max(1,A.width+B.width)>Math.abs(dy)/Math.max(1,A.height+B.height)){
+  if(mode==='h'||(mode!=='v'&&Math.abs(dx)/Math.max(1,A.width+B.width)>Math.abs(dy)/Math.max(1,A.height+B.height))){
    const s=Math.sign(dx)||1;p=[ac[0]+s*A.width/2,ac[1]];q=[bc[0]-s*B.width/2,bc[1]];const k=(q[0]-p[0])*.5;c1=[p[0]+k,p[1]];c2=[q[0]-k,q[1]];
   }else{
    const s=Math.sign(dy)||1;p=[ac[0],ac[1]+s*A.height/2];q=[bc[0],bc[1]-s*B.height/2];const k=(q[1]-p[1])*.5;c1=[p[0],p[1]+k];c2=[q[0],q[1]-k];
@@ -271,7 +271,7 @@ const R={
   const links=[...top.map((x,i)=>[x.h,anc[i],null,W(x.h._hue)]),...low.map((x,i)=>[x.h,anc[i],null,W(x.h._hue)]),...anc.map((a,i)=>[a,anc[i+1]||head])];
   const box=el('div',{class:'dg fish',style:'--m:'+m},el('div',{class:'bones'},el('div',{class:'row'},top.map(x=>x.box)),el('div',{class:'anc'},anc),el('div',{class:'row low'},low.map(x=>x.box))),head);
   return linked(box,()=>links,{arrow:false})},
- tree(d,c){const root=node(d.root,c,'strong keep'),k=d.root.kids.filter(x=>vis(x,c.level)),links=[],lv2=k.map((x,i)=>{const n=node(x,c,'mid',i);links.push([root,n,null,W(i)]);return n}),lv3=k.flatMap((x,i)=>(x.kids||[]).filter(y=>vis(y,c.level)).map(y=>{const n=node(y,c,'',i);links.push([lv2[i],n,null,W(i)]);return n}));
+ tree(d,c){const root=node(d.root,c,'strong keep'),k=d.root.kids.filter(x=>vis(x,c.level)),links=[],lv2=k.map((x,i)=>{const n=node(x,c,'mid',i);links.push([root,n,'v',W(i)]);return n}),lv3=k.flatMap((x,i)=>(x.kids||[]).filter(y=>vis(y,c.level)).map(y=>{const n=node(y,c,'',i);links.push([lv2[i],n,'v',W(i)]);return n}));
   const b=el('div',{class:'dg tree'+(c.width<560?' narrow':'')},el('div',{class:'lv'},root),el('div',{class:'lv'},lv2),el('div',{class:'lv'},lv3));linked(b,()=>links);return el('div',{class:'tree-wrap'},b)},
  cards(d,c){return el('div',{class:'dg cards'},d.filter(x=>vis(x,c.level)).map((x,i)=>{const b=el('button',{class:'card',type:'button',style:'--c:'+W(i)}),show=on=>{b.replaceChildren(el('small',{},on?'Odpoveď':'Otázka'),el('span',{},on?(c.level===4&&x.e)||x.a:x.q));b.classList.toggle('on',on);b.dataset.on=on?'1':''};show(false);b.addEventListener('click',()=>show(!b.dataset.on));return b}))},
  quiz(d,c){return el('div',{class:'dg quiz'},d.filter(x=>vis(x,c.level)).map(x=>{const why=el('div',{class:'why',hidden:true},x.w);const q=el('div',{class:'q'},el('p',{},x.q),x.o.map((o,i)=>el('button',{type:'button',onclick(ev){q.querySelectorAll('button').forEach(b=>b.classList.remove('good','badc'));ev.currentTarget.classList.add(i===x.k?'good':'badc');why.hidden=false;why.textContent=(i===x.k?'Správne. ':'Skúste ešte raz. ')+x.w}},o)),why);return q}))},
@@ -363,7 +363,7 @@ function paintCanvas(){
  flipPlay(snap);
 }
 function paintWhy(){
- const t=S.topic,rec=recOf(t),byGoal=rec!==(KIND[t.kind]?.f),p=$('#whyPanel');if(!p)return;
+ const t=S.topic,rec=recOf(t),byGoal=rec!==(t.rec||KIND[t.kind]?.f),p=$('#whyPanel');if(!p)return;
  const reason=byGoal?(S.goal==='aktivacia'?'Na začiatku hodiny žiaci najprv sami pomenujú, čo už vedia a čo chcú zistiť.':'Pri tomto cieli hodiny si žiaci učivo vybavujú z pamäti, a to najviac pomáha zapamätaniu.'):(t.why?.[rec]||`Táto podoba sa pre typ učiva ${KIND[t.kind]?.n||''} hodí najviac.`);
  const kids=[el('div',{class:'kind'},'Typ učiva: '+(KIND[t.kind]?.n||'iný')),el('h3',{},'Odporúčam: '+F[rec].n),el('p',{},reason)];
  const alts=(t.alts||[]).filter(a=>a[0]!==rec).slice(0,3);
@@ -390,11 +390,12 @@ function guideBoxes(g){const it=(l,hue)=>el('div',{class:'g-list'},l.map(([a,b])
   steps:el('div',{class:'g-box'},el('h3',{},'Priebeh hodiny'),el('ol',{class:'g-steps'},g.steps.map(s=>el('li',{},el('span',{class:'tm'},s.time),el('div',{},el('b',{},s.do),s.say?el('q',{},s.say):null,el('small',{},s.check)))))),
   traps:el('div',{class:'g-box'},el('h3',{},'Na čo si dať pozor'),it(g.traps,0)),
   qa:el('div',{class:'g-box'},el('h3',{},'Keď sa žiaci opýtajú'),it(g.qa,3)),
+  tips:g.tips?.length?el('div',{class:'g-box g-tips'},el('h3',{},'Pre vašu triedu'),el('ul',{},g.tips.map(x=>el('li',{},x)))):'',
   src:g.sources?.length?el('div',{class:'g-box g-src'},el('h3',{},'Z metodík portálu Učíme'),el('ul',{},g.sources.map(x=>el('li',{},el('a',{href:x.url,target:'_blank',rel:'noopener'},x.title),x.page?` (strana ${x.page})`:'')))):''}}
 function paintGuide(){const p=$('#guide'),g=S.topic.guide;
  const head=[el('h2',{},'Sprievodca hodinou'),el('p',{},'Všetko, čo potrebujete vedieť a povedať, aj keď tento predmet neučíte každý deň.')];
  if(!g){p.replaceChildren(...head,sample?el('button',{class:'btn main',type:'button',style:'justify-self:start',onclick:()=>genGuide()},'Pripraviť sprievodcu cez AI'):el('p',{class:'warn'},'Sprievodcu pripraví AI.'));return}
- const b=guideBoxes(g);p.replaceChildren(...head,el('div',{class:'g-grid'},el('div',{class:'g-col'},b.primer,b.steps),el('div',{class:'g-col'},b.traps,b.qa,b.src)))}
+ const b=guideBoxes(g);p.replaceChildren(...head,el('div',{class:'g-grid'},el('div',{class:'g-col'},b.tips,b.primer,b.steps),el('div',{class:'g-col'},b.traps,b.qa,b.src)))}
 function paintAll(){paintBrief();paintRail();paintLevels();paintCanvas();paintGuide();paintWhy();paintSvp()}
 
 /* ---------- tabuľa ---------- */
@@ -443,7 +444,7 @@ function openPrint(){
  const s2=sheet(el('h2',{},'Kľúč riešení: '+t.title),isQ?qList(form,data,lv,true):renderForm(form,data,ctxS(false)));
  const m=t.method;
  const gb=t.guide?guideBoxes(t.guide):null;
- const s3=m?sheet(el('h2',{},'Metodický list: '+t.title),el('h3',{},'Ciele'),el('ul',{},m.goals.map(g=>el('li',{},g))),gb?[gb.primer,gb.steps,gb.traps,gb.qa]:el('ol',{},m.plan.map(([a,b])=>el('li',{},el('b',{},a+': '),b))),el('p',{},'Materiál pripravila AI. Pred použitím ho, prosím, odborne skontrolujte a prispôsobte svojej triede.')):null;
+ const s3=m?sheet(el('h2',{},'Metodický list: '+t.title),el('h3',{},'Ciele'),el('ul',{},m.goals.map(g=>el('li',{},g))),gb?[gb.primer,gb.steps,gb.traps,gb.qa]:el('ol',{},m.plan.map(([a,b])=>el('li',{},el('b',{},a+': '),b))),el('p',{},t.lib?'Téma z knižnice Klbka. Pred použitím ju prispôsobte svojej triede.':'Materiál pripravila AI. Pred použitím ho, prosím, odborne skontrolujte a prispôsobte svojej triede.')):null;
  const pages=el('div',{class:'pages'},s1,s2,s3);
  const close=()=>$('#ovRoot').replaceChildren();
  const saveB=el('button',{class:'btn main',type:'button',onclick:()=>window.print()},'Vytlačiť alebo uložiť ako PDF');
@@ -467,10 +468,15 @@ async function ask(body,onOk,quiet){const qmsg=typeof quiet==='string'?quiet:'Do
  finally{$('#goBtn').disabled=false}
 }
 const base=()=>({title:S.topic.title,subject:S.topic.subject,grade:S.topic.grade,notes:S.topic.notes||''});
+const clone=o=>JSON.parse(JSON.stringify(o));
+function openLibTopic(L,notes,adapted,note){
+ const t={...clone(L),notes:notes||''};if(adapted){t.forms[adapted.form]=adapted.data;if(adapted.tips?.length)t.guide={...(t.guide||{}),tips:adapted.tips}}
+ S.key='kniznica';S.topic=t;savedId=null;dirty=true;S.form=recOf(t);if(!t.forms[S.form])S.form=t.rec;S.hide=false;paintAll();
+ const msg=note||(adapted?'Pripravenú tému som upravil podľa vašich poznámok. Rady pre vašu triedu sú v Sprievodcovi hodinou.':'');setTimeout(()=>setStatus(msg,!!note),0);markDirty()}
 function genTopic(title,subject,grade,notes){
- ask({type:'topic',title,subject,grade,notes},v=>{const f=v.form;if(f==='timeline'&&subject==='Dejepis')v.data.scene='morava';
+ ask({type:'topic',title,subject,grade,notes},v=>{if(v.library){openLibTopic(v.library,notes,v.adapted,v.note);return}const f=v.form;if(f==='timeline'&&subject==='Dejepis')v.data.scene='morava';
   const t={title,subject,grade,notes,kind:v.kind,why:{[f]:v.why},alts:v.alts,picked:v.standards,method:null,forms:{[f]:v.data}};
-  S.key='vlastna';S.topic=t;savedId=null;markDirty();S.form=recOf(t);if(!t.forms[S.form])S.form=f;paintAll();setTimeout(()=>{if(!t.guide)genGuide(true,()=>{if(!t.forms.scene&&S.topic===t)genForm('scene','Kreslím animovaný obrázok. ')})},0)});
+  S.key='vlastna';S.topic=t;savedId=null;markDirty();S.form=recOf(t);if(!t.forms[S.form])S.form=f;paintAll();setTimeout(()=>{if(!t.guide)genGuide(true)},0)});
 }
 function genGuide(q,then){const t=S.topic;ask({...base(),type:'guide'},v=>{t.guide=v.guide;markDirty();if(S.topic===t)paintGuide();then?.()},q===true)}
 function genForm(form,quiet){const t=S.topic;ask({...base(),type:'form',form},v=>{if(form==='timeline'&&t.subject==='Dejepis')v.data.scene='morava';t.forms[form]=v.data;markDirty();if(S.form===form)paintAll();else paintRail()},quiet)}
@@ -534,13 +540,33 @@ async function loadShare(){
  const q=new URLSearchParams(location.search);S.topic={...p.t,kind:null,alts:[]};S.form=q.get('f')&&p.t.forms[q.get('f')]?q.get('f'):p.f;S.level=Number(q.get('l'))||p.l||2;S.hide=q.has('h')||!!p.h;paintCanvas();paintLevels();
 }
 
+/* ---------- knižnica pripravených tém ---------- */
+let LIBX=[];
+async function openLibId(id){setStatus('Otváram pripravenú tému…');try{openLibTopic(await http('/api/temy?id='+encodeURIComponent(id)))}catch{setStatus('Tému sa nepodarilo otvoriť.',true)}}
+function paintSamples(){
+ const subj=$('#fSubject').value,gr=Number($('#fGrade').value),mine=LIBX.filter(x=>x.subject===subj).sort((a,b)=>Math.abs(a.grade-gr)-Math.abs(b.grade-gr)||a.grade-b.grade);
+ const dl=$('#libList');if(dl)dl.replaceChildren(...mine.map(x=>el('option',{value:x.title},x.grade+'. ročník')));
+ const box=$('#samples');
+ if(!LIBX.length){box.replaceChildren(el('span',{},'Vyskúšajte:'),...Object.entries(TOPICS).map(([k,t])=>el('button',{class:'chip',type:'button','data-k':k,onclick:()=>loadTopic(k)},t.title)));return}
+ const list=mine.length?mine:LIBX.slice(0,8);
+ box.replaceChildren(el('span',{},mine.length?'Hotové témy pre '+subj+':':'Hotové témy:'),...list.map(x=>el('button',{class:'chip'+(x.grade===gr?' on':''),type:'button',title:x.grade+'. ročník',onclick:()=>{$('#fTopic').value=x.title;openLibId(x.id)}},x.title,el('small',{},' '+x.grade+'.'))),
+  ...Object.entries(TOPICS).filter(([,t])=>t.subject===subj).map(([k,t])=>el('button',{class:'chip',type:'button',onclick:()=>loadTopic(k)},t.title,el('small',{},' '+t.grade+'.'))),
+  el('button',{class:'chip more',type:'button',onclick:openCatalog},'Všetky hotové témy ('+LIBX.length+')'))}
+function openCatalog(){
+ const by={};LIBX.forEach(x=>(by[x.subject]=by[x.subject]||[]).push(x));
+ const body=el('div',{class:'sharebox lib catalog'},el('p',{},'Témy sú pripravené vopred a otvoria sa hneď, bez čakania na AI. Ak pod zadaním pridáte poznámky o svojej triede, AI vybranú tému upraví na mieru.'),
+  Object.entries(by).map(([sub,l])=>el('section',{},el('h3',{},sub),el('div',{class:'chips'},l.sort((a,b)=>a.grade-b.grade).map(x=>el('button',{class:'chip',type:'button',onclick:()=>{close();$('#fSubject').value=x.subject;$('#fGrade').value=x.grade;$('#fTopic').value=x.title;paintSamples();openLibId(x.id)}},x.title,el('small',{},' '+x.grade+'.')))))));
+ const close=overlay('Hotové témy',body)}
+
 /* ---------- štart ---------- */
 function loadTopic(k){S.key=k;S.topic=TOPICS[k];S.form=recOf(S.topic);if(!S.topic.forms[S.form])S.form=KIND[S.topic.kind].f;S.hide=false;paintAll();setStatus('')}
 (function init(){
  $('#fSubject').replaceChildren(...SUBJECTS.map(s=>el('option',{},s)));
  $('#fGrade').replaceChildren(...Array.from({length:9},(_,i)=>el('option',{value:i+1},`${i+1}. (${cycleOf(i+1)})`)));
  $('#fGoal').replaceChildren(...GOALS.map(([v,n])=>el('option',{value:v},n)));
- $('#samples').append(el('span',{},'Vyskúšajte:'),...Object.entries(TOPICS).map(([k,t])=>el('button',{class:'chip',type:'button','data-k':k,onclick:()=>loadTopic(k)},t.title)));
+ $('#fTopic').setAttribute('list','libList');document.body.append(el('datalist',{id:'libList'}));paintSamples();
+ $('#fSubject').addEventListener('change',paintSamples);$('#fGrade').addEventListener('change',paintSamples);
+ if(!window.KLBKO_SHARE)http('/api/temy').then(r=>{LIBX=r.items||[];paintSamples()}).catch(()=>{});
  $('#boardBtn').append(ic('screen',''),'Na tabuľu');$('#printBtn').append(ic('print',''),'Tlač');
  $('#boardBtn').addEventListener('click',()=>openBoard());$('#playBtn').append(ic('cycle',''),'Prehrať');$('#playBtn').addEventListener('click',()=>openBoard(true));$('#shareBtn').append(ic('people',''),'Pre žiakov');$('#shareBtn').addEventListener('click',()=>openShare());$('#printBtn').addEventListener('click',openPrint);
  $('#hideBtn').addEventListener('click',()=>{S.hide=!S.hide;paintLevels();paintCanvas()});
