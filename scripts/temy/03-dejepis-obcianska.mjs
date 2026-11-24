@@ -39,7 +39,7 @@ export default [
  id: 'egypt', title: 'Staroveký Egypt', aka: ['Egypt', 'Starovek – Egypt', 'Riečne civilizácie'], subject: 'Dejepis', grade: 6, kind: 'pojmy', rec: 'mind',
  why: 'Pri Egypte sa učí rieka, vládca, viera, písmo a stavby, ktoré spolu súvisia. Myšlienková mapa ich spojí okolo jedného stredu.',
  alts: [['tree', 'Keď preberáte vrstvy egyptskej spoločnosti.'], ['scene', 'Keď chcete ukázať záplavy Nílu a pyramídy.'], ['cards', 'Keď si žiaci opakujú pojmy.']],
- std: ['S5173', 'S5174', 'S5175'],
+ std: ['S1064', 'S5173', 'S5174', 'S5175'],
  method: { goals: ['Žiak vysvetlí význam Nílu pre vznik egyptského štátu.', 'Žiak opíše postavenie faraóna a vrstvy spoločnosti.', 'Žiak uvedie vynálezy a poznatky Egypťanov, ktoré používame dodnes.'],
   plan: [['5 min', 'Obrázok púšte a Nílu: kde by ste postavili dom?'], ['15 min', 'Myšlienková mapa Egypta.'], ['15 min', 'Pyramída spoločnosti a práca s prameňom.'], ['10 min', 'Kartičky a kvíz.']],
   ask: ['Prečo Egypťania čakali na záplavy, keď nám spôsobujú škody?', 'Prečo stavali pyramídy?'] },

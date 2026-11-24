@@ -377,9 +377,10 @@ function paintSvp(){
  const box=el('div',{},el('p',{class:'warn'},'Hľadám štandardy…'));p.replaceChildren(el('h3',{},'Štandardy'),tabs,box);
  const draw=(items,exact)=>{if(S.topic!==t||(S.prog==='v2015'?'2015':'2023')!==prog)return;
   if(!items.length){box.replaceChildren(el('p',{class:'warn'},'V tomto programe sme k téme nenašli zodpovedajúci štandard. Vyberte ho prosím sami.'));return}
-  box.replaceChildren(exact===false?el('p',{class:'warn'},'Pre tento ročník sme zhodu nenašli, zobrazujeme najbližšie štandardy z iných ročníkov.'):'',el('ul',{class:'std'},items.map(x=>{const g=/^(\d)\. ročník/.exec(x.where);return el('li',{},x.text,el('small',{},`${x.kind} · ${x.where} · `,el('a',{href:x.url+'#page='+x.page,target:'_blank',rel:'noopener'},'strana '+x.page)),g&&+g[1]!==S.topic.grade?el('small',{class:'grnote'},`Podľa ŠVP 2015 sa toto učivo preberá v ${g[1]}. ročníku.`):'')})))};
+  box.replaceChildren(prog==='2023'&&t.svpnote?el('p',{class:'grnote svpnote'},t.svpnote):'',exact===false?el('p',{class:'warn'},'Pre tento ročník sme zhodu nenašli, zobrazujeme najbližšie štandardy z iných ročníkov.'):'',el('ul',{class:'std'},items.map(x=>{const g=/^(\d)\. ročník/.exec(x.where);return el('li',{},x.text,el('small',{},`${x.kind} · ${x.where} · `,el('a',{href:x.url+'#page='+x.page,target:'_blank',rel:'noopener'},'strana '+x.page)),g&&+g[1]!==S.topic.grade?el('small',{class:'grnote'},`Podľa ŠVP 2015 sa toto učivo preberá v ${g[1]}. ročníku.`):'')})))};
  const picked=(t.picked||[]).filter(x=>x.where&&(prog==='2023'?/cyklus/.test(x.where):/ročník/.test(x.where)));
  if(picked.length){draw(picked,true);return}
+ if(prog==='2023'&&t.svpnote){box.replaceChildren(el('p',{class:'grnote svpnote'},t.svpnote));return}
  const k=[t.title,t.subject,t.grade,prog].join('|');
  if(stdCache[k]){draw(stdCache[k].items,stdCache[k].exact);return}
  const q=new URLSearchParams({title:t.title,subject:t.subject,grade:t.grade,program:prog});

@@ -33,7 +33,7 @@ export default [
  id: 'bajka', title: 'Bájka', aka: ['Bájky', 'Ezop', 'Ponaučenie v bájke'], subject: 'Slovenský jazyk a literatúra', grade: 5, kind: 'pojmy', rec: 'mind',
  why: 'Bájka má jasné znaky: zvieratá s ľudskými vlastnosťami, krátky dej a ponaučenie. Myšlienková mapa ich ukáže spolu s autormi a príkladmi.',
  alts: [['venn', 'Keď porovnávate bájku a rozprávku.'], ['scene', 'Keď chcete prerozprávať bájku Líška a havran obrázkom.'], ['cards', 'Keď si žiaci priraďujú zvieratám vlastnosti.']],
- std: ['S7134', 'S7135', 'S7138'],
+ std: ['S2799', 'S2836', 'S7134', 'S7135', 'S7138'],
  method: { goals: ['Žiak vysvetlí, čo je bájka, a uvedie jej znaky.', 'Žiak vlastnými slovami sformuluje ponaučenie bájky.', 'Žiak uvedie autorov bájok vrátane slovenského.'],
   plan: [['5 min', 'Prečítanie bájky Líška a havran.'], ['15 min', 'Myšlienková mapa znakov bájky.'], ['15 min', 'Skupiny čítajú rôzne bájky a hľadajú ponaučenie.'], ['10 min', 'Výrazné čítanie a kvíz.']],
   ask: ['Prečo v bájkach vystupujú zvieratá, a nie ľudia?', 'Platí ponaučenie aj dnes?'] },

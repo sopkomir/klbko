@@ -253,6 +253,7 @@ export default [
  why: 'Zariadenia počítača sa dajú rozdeliť podľa toho, či informácie prijímajú, spracúvajú, alebo vydávajú. Strom ich roztriedi prehľadne.',
  alts: [['scene', 'Keď chcete ukázať, kadiaľ ide informácia od klávesnice po monitor.'], ['ttable', 'Keď triedite vstupné a výstupné zariadenia.'], ['quiz', 'Na triedenie zariadení.']],
  std: ['S4243', 'S4246'],
+ svpnote: 'V databáze ŠVP 2023 sme pre 2. cyklus nenašli štandard o častiach počítača. Téma preto vychádza zo ŠVP 2015 (informatika, 4. ročník). Overí sa pri kontrole konsolidovaného znenia ŠVP 2023 s Dodatkom č. 5.',
  method: { goals: ['Žiak pomenuje hlavné časti počítača.', 'Žiak rozlíši vstupné a výstupné zariadenia.', 'Žiak správne používa myš a klávesnicu.'],
   plan: [['5 min', 'Otázka: čo všetko patrí k počítaču?'], ['15 min', 'Strom zariadení.'], ['15 min', 'Triedenie obrázkov zariadení do skupín, práca s myšou a klávesnicou.'], ['10 min', 'Kvíz.']],
   ask: ['Je dotyková obrazovka vstup, alebo výstup?', 'Prečo potrebuje počítač pamäť?'] },
