@@ -47,7 +47,11 @@ export async function POST(req: NextRequest) {
     if (lib) {
       const full = libFull(lib), form = lib.rec;
       try {
-        const { value, provider } = await askJson(adaptPrompt(q, form, lib.forms[form]), x => !!cleanForm(form, x?.data));
+        const orig = lib.forms[form] as any;
+        // Poistka: AI nesmie meniť správne odpovede v kvíze ani vymýšľať nové fakty v kartičkách.
+        const okQuiz = (d: any) => form !== 'quiz' || (Array.isArray(d) && d.every((x: any) => orig.some((o: any) => o.o?.[o.k] === x?.o?.[x?.k])));
+        const okCards = (d: any) => form !== 'cards' || (Array.isArray(d) && d.every((x: any) => orig.some((o: any) => o.a === x?.a || o.q === x?.q)));
+        const { value, provider } = await askJson(adaptPrompt(q, form, orig), x => !!cleanForm(form, x?.data) && okQuiz(x.data) && okCards(x.data));
         out = { provider, library: full, adapted: { form, data: cleanForm(form, value.data)!.data, tips: (Array.isArray(value.tips) ? value.tips : []).slice(0, 4).map(String) } };
       } catch (e) {
         console.error('Úprava témy zlyhala:', e);

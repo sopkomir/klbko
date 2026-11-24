@@ -191,7 +191,7 @@ export default [
    { t: 'Obyvatelia', ic: 'people', kids: [{ t: 'volia starostu a poslancov' }, { t: 'petícia, referendum', l: 2 }] },
    { t: 'Starosta / primátor', ic: 'crown', kids: [{ t: 'vedie obec' }, { t: 'zastupuje ju navonok', l: 2 }] },
    { t: 'Obecné zastupiteľstvo', ic: 'book', kids: [{ t: 'poslanci' }, { t: 'schvaľuje rozpočet' }, { t: 'prijíma nariadenia (VZN)', l: 2 }] },
-   { t: 'Obecný úrad', ic: 'castle', kids: [{ t: 'zamestnanci vybavujú veci občanov' }, { t: 'matrika, stavebné povolenia', l: 2 }] }] } },
+   { t: 'Obecný úrad', ic: 'castle', kids: [{ t: 'zamestnanci vybavujú veci občanov' }, { t: 'niektoré agendy, napríklad matriku, majú len vybrané obce', l: 3 }] }] } },
   mind: { center: 'Úlohy obce', branches: [
    { t: 'Infraštruktúra', ic: 'map', kids: [{ t: 'miestne cesty a chodníky' }, { t: 'verejné osvetlenie' }] },
    { t: 'Životné prostredie', ic: 'plant', kids: [{ t: 'odvoz odpadu' }, { t: 'zeleň a parky' }] },

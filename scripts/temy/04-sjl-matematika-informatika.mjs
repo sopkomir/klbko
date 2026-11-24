@@ -234,7 +234,7 @@ export default [
    { t: 'Heslá', ic: 'star', kids: [{ t: 'dlhé a nezvyčajné' }, { t: 'každý účet iné heslo' }, { t: 'nikomu ho nehovoriť' }, { t: 'dvojfaktorové overenie', l: 2 }] },
    { t: 'Osobné údaje', ic: 'people', kids: [{ t: 'adresa a telefón nie sú verejné' }, { t: 'fotky len so súhlasom' }, { t: 'poloha v aplikáciách', l: 2 }] },
    { t: 'Podvody', ic: 'cross', kids: [{ t: 'neznáme odkazy neotvárať' }, { t: 'pozor na súrne výzvy' }, { t: 'phishing: falošná stránka', l: 2 }] },
-   { t: 'Správanie', ic: 'book', kids: [{ t: 'kyberšikanu povedať dospelému' }, { t: 'uložiť dôkazy, zablokovať a nahlásiť' }, { t: 'správať sa slušne', l: 2 }] }] },
+   { t: 'Správanie', ic: 'book', kids: [{ t: 'kyberšikanu povedať dospelému' }, { t: 'uložiť dôkazy, zablokovať a nahlásiť' }, { t: 'správať sa slušne', l: 2 }] }, { t: 'Ďalšie riziká', ic: 'cross', l: 2, kids: [{ t: 'cudzí človek chce tajomstvo alebo stretnutie: povedať to dospelému' }, { t: 'neposielať nikomu intímne fotky' }, { t: 'deepfake: falošné fotky a videá', l: 3 }] }] },
   ttable: { a: 'Bezpečné', b: 'Rizikové', rows: [[{ t: 'dlhé heslo, iné pre každý účet' }, { t: 'heslo 123456 všade rovnaké' }], [{ t: 'súkromný profil a opatrnosť aj pri známych' }, { t: 'verejný profil s adresou školy' }], [{ t: 'overím odosielateľa správy' }, { t: 'kliknem na výhru v súťaži, do ktorej som sa neprihlásil' }], [{ t: 'aktualizácie zariadenia', l: 2 }, { t: 'aplikácie z neznámych stránok', l: 2 }]] },
   fish: { problem: 'Prečo mi niekto ukradol účet?', groups: [
    { t: 'Heslo', items: [{ t: 'krátke alebo ľahké' }, { t: 'rovnaké všade' }] },

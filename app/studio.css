@@ -503,3 +503,4 @@ body.student #libBtn,body.student #saveBtn,body.student .topnav{display:none}
 @media (prefers-reduced-motion:reduce){.g-chip.bad{animation:none}}
 .sharebox.catalog{max-width:1120px;width:calc(100% - 32px)}#helpBtn{color:var(--fg);font-weight:600}.ov.game .bar .spacer{flex:1}
 .nv a.btn{color:var(--fg)}
+.grnote{display:block;color:var(--wool-ink);font-weight:600}
