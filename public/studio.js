@@ -492,16 +492,21 @@ let savedId=null,savedFor=null,dirty=true;
 function markDirty(){dirty=true;const b=$('#saveBtn');if(b&&!document.body.classList.contains('student'))b.classList.add('main')}
 async function savePrep(){
  if(!dirty&&savedId&&savedFor===S.topic)return savedId;
- const pay=prepPayload();let id;
- try{id=(await http('/api/share',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(pay)})).id}
+ const pay=prepPayload();let id,key;
+ const same=x=>x.title===pay.t.title&&x.subject===pay.t.subject&&x.grade===pay.t.grade;
+ const prev=libGet().find(x=>x.key&&(x.id===savedId||same(x)));
+ const web={...pay,t:{...pay.t}};delete web.t.notes;
+ const hd={'content-type':'application/json'};if(prev){hd['x-klbko-id']=prev.id;hd['x-klbko-key']=prev.key}
+ try{const r=await http('/api/share',{method:'POST',headers:hd,body:JSON.stringify(web)});id=r.id;key=r.key}
  catch{id='m-'+Date.now().toString(36);try{localStorage.setItem('klbko-p-'+id,JSON.stringify(pay))}catch{}}
- const l=libGet().filter(x=>!(x.title===pay.t.title&&x.subject===pay.t.subject&&x.grade===pay.t.grade));
- l.unshift({id,title:pay.t.title,subject:pay.t.subject,grade:pay.t.grade,at:pay.at});libPut(l);
+ if(key&&pay.t.notes){try{localStorage.setItem('klbko-n-'+id,pay.t.notes)}catch{}}
+ const l=libGet().filter(x=>!same(x)&&x.id!==id);
+ l.unshift({id,key,title:pay.t.title,subject:pay.t.subject,grade:pay.t.grade,at:pay.at});libPut(l);
  savedId=id;savedFor=S.topic;dirty=false;$('#saveBtn')?.classList.remove('main');return id}
 async function loadPrep(id){
  let p=null;if(id.startsWith('m-')){try{p=JSON.parse(localStorage.getItem('klbko-p-'+id))}catch{}}else{try{p=await http('/api/share/'+encodeURIComponent(id))}catch{}}
  if(!p?.t?.forms)return false;
- S.key='ulozena';S.topic={...p.t};S.form=p.f&&p.t.forms[p.f]?p.f:Object.keys(p.t.forms)[0];S.level=p.l||2;S.hide=false;savedId=id;savedFor=S.topic;dirty=false;paintAll();return true}
+ S.key='ulozena';S.topic={...p.t};if(!S.topic.notes){try{const n=localStorage.getItem('klbko-n-'+id);if(n)S.topic.notes=n}catch{}}S.form=p.f&&p.t.forms[p.f]?p.f:Object.keys(p.t.forms)[0];S.level=p.l||2;S.hide=false;savedId=id;savedFor=S.topic;dirty=false;paintAll();return true}
 const fmt=d=>{try{return new Date(d).toLocaleDateString('sk-SK',{day:'numeric',month:'numeric',year:'numeric'})}catch{return''}};
 function overlay(title,body){const close=()=>$('#ovRoot').replaceChildren();$('#ovRoot').replaceChildren(el('div',{class:'ov print',role:'dialog','aria-modal':'true','aria-label':title},el('div',{class:'bar noprint'},el('b',{},title),el('button',{class:'btn',type:'button',onclick:close},'Zavrieť')),body));return close}
 function linkBox(u,label){const inp=el('input',{readonly:true,value:u,'aria-label':label});return el('div',{class:'linkrow'},inp,el('button',{class:'btn',type:'button',onclick(ev){navigator.clipboard?.writeText(u).then(()=>{ev.target.textContent='Skopírované'}).catch(()=>inp.select())}},'Kopírovať'))}
@@ -509,15 +514,25 @@ function openLibrary(){
  const list=libGet(),body=el('div',{class:'sharebox lib'});
  const close=overlay('Moje prípravy',body);
  if(!list.length){body.append(el('p',{},'Zatiaľ tu nič nie je. Prípravu uložíte tlačidlom Uložiť pod zadaním.'));return}
- body.append(el('p',{class:'warn'},'Zoznam je uložený v tomto prehliadači. Na inom zariadení otvorte prípravu cez jej odkaz pre učiteľa.'),
+ body.append(el('p',{class:'warn'},'Zoznam je uložený v tomto prehliadači. Na inom zariadení otvorte prípravu cez jej odkaz pre učiteľa. Uložená príprava ostáva na webe, kým ju tu nezmažete. Vaše poznámky o triede sa na web neukladajú.'),
   el('ul',{class:'liblist'},list.map(x=>el('li',{},el('div',{},el('b',{},x.title),el('small',{},`${x.subject} · ${x.grade}. ročník · ${fmt(x.at)}`)),
    el('div',{class:'libbtns'},el('button',{class:'btn main',type:'button',onclick:async()=>{close();if(!await loadPrep(x.id))setStatus('Prípravu sa nepodarilo otvoriť.',true)}},'Otvoriť'),
-    el('button',{class:'btn',type:'button',onclick(){libPut(libGet().filter(y=>y.id!==x.id));openLibrary()}},'Odstrániť zo zoznamu'))))))}
+    el('button',{class:'btn',type:'button',onclick:()=>forgetPrep(x)},x.key||x.id.startsWith('m-')?'Zmazať':'Odstrániť zo zoznamu'))))))}
+async function forgetPrep(x){
+ const web=!!x.key;
+ const msg=web?'Zmazať prípravu „'+x.title+'“? Zmizne z webu a prestanú fungovať aj odkazy a QR kódy, ktoré ste k nej dali žiakom.':'Odstrániť „'+x.title+'“ zo zoznamu v tomto prehliadači?';
+ const body=el('div',{class:'sharebox'});const close=overlay(web?'Zmazať prípravu':'Odstrániť zo zoznamu',body);
+ body.append(el('p',{},msg),el('div',{class:'libbtns'},el('button',{class:'btn bad',type:'button',onclick:()=>go()},web?'Áno, zmazať':'Áno, odstrániť'),el('button',{class:'btn',type:'button',onclick:()=>openLibrary()},'Nie, späť')));
+ const go=(async()=>{body.replaceChildren(el('p',{},'Mažem…'));
+  if(web){try{await http('/api/share/'+encodeURIComponent(x.id),{method:'DELETE',headers:{'x-klbko-key':x.key}})}catch(e){setStatus(e.user||'Prípravu sa nepodarilo zmazať z webu. Skúste to neskôr.',true);openLibrary();return}}
+  try{localStorage.removeItem('klbko-p-'+x.id);localStorage.removeItem('klbko-n-'+x.id)}catch{}
+  libPut(libGet().filter(y=>y.id!==x.id));if(savedId===x.id){savedId=null;dirty=true}
+  openLibrary();setTimeout(()=>setStatus(web?'Príprava je zmazaná aj z webu.':'Odstránené zo zoznamu.'),0)});void close}
 async function openSave(){
  const body=el('div',{class:'sharebox'},el('p',{},'Ukladám prípravu…'));overlay('Príprava je uložená',body);
  const id=await savePrep();const local=id.startsWith('m-');
  body.replaceChildren(el('p',{},'Nájdete ju v časti Moje prípravy v tomto prehliadači.'),
-  local?el('p',{class:'warn'},'Úložisko teraz nie je dostupné, príprava je len v tomto prehliadači.'):[el('p',{},'Odkaz pre vás, otvorí prípravu na úpravu aj na inom zariadení:'),linkBox(location.origin+'/?m='+id,'Odkaz pre učiteľa'),el('p',{class:'warn'},'Tento odkaz nedávajte žiakom. Pre nich je tlačidlo Pre žiakov.')])}
+  local?el('p',{class:'warn'},'Úložisko teraz nie je dostupné, príprava je len v tomto prehliadači.'):[el('p',{},'Odkaz pre vás, otvorí prípravu na úpravu aj na inom zariadení:'),linkBox(location.origin+'/?m='+id,'Odkaz pre učiteľa'),el('p',{class:'warn'},'Tento odkaz nedávajte žiakom. Pre nich je tlačidlo Pre žiakov.'),el('p',{class:'muted'},'Príprava ostane na webe, kým ju nezmažete v časti Moje prípravy. Poznámky o triede ostávajú len vo vašom prehliadači.')])}
 async function openShare(){
  const t=S.topic;if(!t.forms[S.form])return;
  const body=el('div',{class:'sharebox'},el('p',{},'Pripravujem odkaz…'));overlay('Pre žiakov',body);
@@ -618,15 +633,27 @@ function paintSamples(){
  const dl=$('#libList');if(dl)dl.replaceChildren(...mine.map(x=>el('option',{value:x.title},x.grade+'. ročník')));
  const box=$('#samples');
  if(!LIBX.length){box.replaceChildren(el('span',{},'Vyskúšajte:'),...Object.entries(TOPICS).map(([k,t])=>el('button',{class:'chip',type:'button','data-k':k,onclick:()=>loadTopic(k)},t.title)));return}
- const list=mine.length?mine:LIBX.slice(0,8);
+ const list=(mine.length?mine:LIBX).slice(0,7);
  box.replaceChildren(el('span',{},mine.length?'Hotové témy pre '+subj+':':'Hotové témy:'),...list.map(x=>el('button',{class:'chip'+(x.grade===gr?' on':''),type:'button',title:x.grade+'. ročník',onclick:()=>{$('#fTopic').value=x.title;openLibId(x.id)}},x.title,el('small',{},' '+x.grade+'.'))),
   ...Object.entries(TOPICS).filter(([,t])=>t.subject===subj).map(([k,t])=>el('button',{class:'chip',type:'button',onclick:()=>loadTopic(k)},t.title,el('small',{},' '+t.grade+'.'))),
-  el('button',{class:'chip more',type:'button',onclick:openCatalog},'Všetky hotové témy ('+LIBX.length+')'))}
+  el('button',{class:'chip more',type:'button',onclick:openCatalog},'Všetky hotové témy ('+LIBX.length+') →'))}
 function openCatalog(){
- const by={};LIBX.forEach(x=>(by[x.subject]=by[x.subject]||[]).push(x));
- const body=el('div',{class:'sharebox lib catalog'},el('p',{},'Témy sú pripravené vopred a otvoria sa hneď, bez čakania na AI. Ak pod zadaním pridáte poznámky o svojej triede, AI vybranú tému upraví na mieru.'),
-  Object.entries(by).map(([sub,l])=>el('section',{},el('h3',{},sub),el('div',{class:'tcards'},l.sort((a,b)=>a.grade-b.grade).map(x=>el('button',{class:'tcard',type:'button',onclick:()=>{close();$('#fSubject').value=x.subject;$('#fGrade').value=x.grade;$('#fTopic').value=x.title;paintSamples();openLibId(x.id)}},x.img?el('img',{src:'/nahlady/'+x.id+'.jpg',alt:'',loading:'lazy',width:360,height:192}):el('span',{class:'noimg'},x.title.slice(0,1)),el('b',{},x.title),el('small',{},x.grade+'. ročník')))))));
- const close=overlay('Hotové témy',body)}
+ const fold=x=>String(x).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+ const gr=Number($('#fGrade').value),st={q:'',sub:'',near:false};
+ const subs=[...new Set(LIBX.map(x=>x.subject))];
+ const cards=LIBX.slice().sort((a,b)=>a.grade-b.grade).map(x=>{const b=el('button',{class:'tcard',type:'button',onclick:()=>{close();$('#fSubject').value=x.subject;$('#fGrade').value=x.grade;$('#fTopic').value=x.title;paintSamples();openLibId(x.id)}},x.img?el('img',{src:'/nahlady/'+x.id+'.jpg',alt:'',loading:'lazy',width:360,height:192}):el('span',{class:'noimg'},x.title.slice(0,1)),el('b',{},x.title),el('small',{},x.grade+'. ročník · '+x.subject));b._x=x;b._h=fold([x.title,...(x.aka||[]),x.subject].join(' '));return b});
+ const grid=el('div',{class:'tcards'},cards),empty=el('p',{class:'muted cat-empty',hidden:true},'Takú tému zatiaľ nemáme. Napíšte ju do poľa Téma a Klbko ju pripraví s pomocou AI.');
+ const count=el('span',{class:'cat-count'});
+ const apply=()=>{const q=fold(st.q.trim());let n=0;cards.forEach(c=>{const ok=(!q||q.split(/\s+/).every(w=>c._h.includes(w)))&&(!st.sub||c._x.subject===st.sub)&&(!st.near||Math.abs(c._x.grade-gr)<=1);c.hidden=!ok;if(ok)n++});count.textContent=n+(n===1?' téma':n>=2&&n<=4?' témy':' tém');empty.hidden=n>0};
+ const search=el('input',{type:'search',placeholder:'Hľadať tému, napríklad sopky, zlomky, Štúr…','aria-label':'Hľadať tému',oninput(){st.q=this.value;apply()}});
+ const chip=(label,val)=>el('button',{class:'chip',type:'button','aria-pressed':String(st.sub===val),onclick(){st.sub=val;filt.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed','false'));this.setAttribute('aria-pressed','true');apply()}},label);
+ const filt=el('div',{class:'chips cat-subs'},chip('Všetky predmety',''),subs.map(s=>chip(s,s)));
+ const near=el('label',{class:'cat-near'},el('input',{type:'checkbox',onchange(){st.near=this.checked;apply()}}),' Len okolo '+gr+'. ročníka');
+ const body=el('div',{class:'sharebox lib catalog'},
+  el('div',{class:'cat-head'},search,el('div',{class:'cat-row'},near,count),filt),
+  el('p',{class:'muted'},'Témy sú pripravené vopred a otvoria sa hneď, bez čakania na AI. Ak pod zadaním pridáte poznámky o svojej triede, AI vybranú tému upraví na mieru.'),
+  grid,empty);
+ const close=overlay('Hotové témy',body);apply();setTimeout(()=>search.focus(),30)}
 
 /* ---------- štart ---------- */
 function loadTopic(k){S.key=k;S.topic=TOPICS[k];S.form=recOf(S.topic);if(!S.topic.forms[S.form])S.form=KIND[S.topic.kind].f;S.hide=false;paintAll();setStatus('')}
@@ -646,7 +673,9 @@ function loadTopic(k){S.key=k;S.topic=TOPICS[k];S.form=recOf(S.topic);if(!S.topi
   genTopic(title,subj,gr,$('#fNotes').value)});
  let rw;window.addEventListener('resize',()=>{cancelAnimationFrame(rw);rw=requestAnimationFrame(()=>{if(!$('#ovRoot').firstChild&&S.form==='cycle')paintCanvas()})});
  if(!window.KLBKO_SHARE){paintAll();const m=new URLSearchParams(location.search).get('m');if(m)loadPrep(m).then(ok=>{if(!ok)setStatus('Uloženú prípravu sa nepodarilo nájsť.',true)})}
- $('#libBtn').append(ic('book',''),'Moje prípravy');$('#libBtn').addEventListener('click',openLibrary);$('#saveBtn').append(ic('star',''),'Uložiť');$('#saveBtn').addEventListener('click',openSave);
+ $('#libBtn').append(ic('book',''),el('span',{class:'lbl-long'},'Moje prípravy'),el('span',{class:'lbl-short'},'Prípravy'));
+ {const h=$('#howto');let seen=false;try{seen=localStorage.getItem('klbko-howto')==='1'}catch{}if(h&&!seen&&!document.body.classList.contains('student'))h.hidden=false;$('#howtoClose')?.addEventListener('click',()=>{h.hidden=true;try{localStorage.setItem('klbko-howto','1')}catch{}})}
+$('#libBtn').addEventListener('click',openLibrary);$('#saveBtn').append(ic('star',''),'Uložiť');$('#saveBtn').addEventListener('click',openSave);
  if(window.KLBKO_SHARE)loadShare();
 })();
 

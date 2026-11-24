@@ -504,3 +504,40 @@ body.student #libBtn,body.student #saveBtn,body.student .topnav{display:none}
 .sharebox.catalog{max-width:1120px;width:calc(100% - 32px)}#helpBtn{color:var(--fg);font-weight:600}.ov.game .bar .spacer{flex:1}
 .nv a.btn{color:var(--fg)}
 .grnote{display:block;color:var(--wool-ink);font-weight:600}
+.btn.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+/* v5: prvé kroky, katalóg s hľadaním, kompaktná hlavička */
+.howto{display:flex;align-items:center;gap:16px;margin-top:14px;padding:12px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.howto ol{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0;padding:0;list-style:none;counter-reset:h;flex:1}
+.howto li{counter-increment:h;display:grid;grid-template-columns:30px 1fr;column-gap:10px;align-items:start}
+.howto li::before{content:counter(h);grid-row:span 2;width:28px;height:28px;border-radius:50%;background:var(--wool);color:var(--on-wool);display:grid;place-items:center;font-weight:700;font-size:14px}
+.howto b{font-size:15px}.howto span{font-size:13.5px;color:var(--muted);line-height:1.4}
+.howto[hidden]{display:none}
+.chip.more{border-style:solid;border-color:var(--wool);color:var(--wool-ink);background:var(--wool-soft)}
+.cat-head{position:sticky;top:-1px;z-index:2;background:var(--surface);padding:4px 0 12px;display:grid;gap:10px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.cat-head input[type=search]{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;padding:0 14px;font:inherit;font-size:16px;background:var(--bg);color:var(--fg)}
+.cat-head input[type=search]:focus{outline:2px solid var(--wool);outline-offset:1px}
+.cat-row{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px}
+.cat-near{display:flex;align-items:center;gap:6px;cursor:pointer}.cat-count{color:var(--muted)}
+.cat-subs{max-height:84px;overflow:auto}
+.tcard[hidden]{display:none}.cat-empty{padding:20px 0}
+.lbl-short{display:none}
+@media (max-width:860px){.howto{flex-direction:column;align-items:stretch}.howto ol{grid-template-columns:1fr;gap:10px}.howto .btn{align-self:flex-start}}
+@media (max-width:640px){
+ header.top{flex-wrap:nowrap;gap:8px}.brand small{display:none}.brand b{font-size:22px}
+ #helpBtn{margin-left:auto}#helpBtn,#libBtn{padding-inline:12px;min-height:40px}#libBtn{margin-left:0}
+ .lbl-long{display:none}.lbl-short{display:inline}
+ #samples .chip:not(.more):nth-of-type(n+5){display:none}
+ .cat-subs{flex-wrap:nowrap;overflow-x:auto;max-height:none;padding-bottom:4px}
+}
+.cat-near{white-space:nowrap}.cat-near input{width:18px;height:18px;min-height:0;margin:0;padding:0;accent-color:var(--wool)}
+@media (max-width:640px){.howto{gap:10px;padding:12px}.howto li{grid-template-columns:28px 1fr}.howto li::before{width:24px;height:24px;font-size:13px}.howto span{display:none}.howto b{font-size:14px;align-self:center}.howto ol{gap:8px}.howto .btn{min-height:36px}}
+@media (max-width:640px){
+ .toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+ .toolbar .seg{grid-column:1/-1;flex-wrap:nowrap;overflow-x:auto;width:100%}
+ .toolbar .seg button{flex:1 0 auto;white-space:nowrap;padding:6px 10px;font-size:13px;min-height:40px}
+ .toolbar .spacer{display:none}
+ .toolbar>.btn{flex-direction:column;gap:2px;min-height:58px;padding:6px 2px;font-size:11.5px;line-height:1.15;text-align:center;justify-content:center;white-space:normal}
+ .toolbar>.btn svg{width:20px;height:20px;margin:0}
+}
+@media (max-width:640px){.motion{font-size:11.5px!important;padding:4px 10px!important;min-height:28px!important;right:8px!important;bottom:8px!important;opacity:.92}}
+@media (max-width:640px){.catalog .tcards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.catalog .tcard b{font-size:13px}.catalog .tcard small{font-size:11px}}

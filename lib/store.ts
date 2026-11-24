@@ -1,4 +1,4 @@
-import { get, put } from '@vercel/blob';
+import { del, get, put } from '@vercel/blob';
 export const hasStore = () => !!(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN);
 export async function save(path: string, text: string): Promise<void> {
   const o = { addRandomSuffix: false, allowOverwrite: true, contentType: 'application/json' };
@@ -14,3 +14,4 @@ export async function load(path: string): Promise<unknown | null> {
   }
   return null;
 }
+export async function remove(path: string): Promise<void> { await del(path); }

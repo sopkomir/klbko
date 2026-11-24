@@ -24,7 +24,7 @@ const TOOLS: [string, string][] = [
   ['Prehrať', 'Tabuľa odkrýva pomôcku krok za krokom s popisom. Hodí sa na pokojný výklad.'],
   ['Pre žiakov', 'Vytvorí QR kód a odkaz. Žiaci ho otvoria na tablete alebo mobile bez účtu a prihlasovania.'],
   ['Tlač', 'Pracovný list s doplňovaním, kľúč riešení a metodický list pre vás. Uložíte ho aj ako PDF.'],
-  ['Uložiť a Moje prípravy', 'Prípravu uložíte a dostanete odkaz, ktorým ju otvoríte aj na inom zariadení. Zoznam príprav je v tomto prehliadači.'],
+  ['Uložiť a Moje prípravy', 'Prípravu uložíte a dostanete odkaz, ktorým ju otvoríte aj na inom zariadení. Zoznam príprav je v tomto prehliadači. Uložená príprava ostáva na webe, kým ju v Mojich prípravách nezmažete. Potom prestanú fungovať aj odkazy a QR kódy pre žiakov. Poznámky o triede sa na web neukladajú, ostávajú len vo vašom prehliadači.'],
   ['Farby obrázka', 'Pri animácii zmeníte farby jedným klikom, napríklad pre lepší kontrast na projektore.'],
   ['Sprievodca hodinou', 'Téma za minútu, priebeh hodiny s vetami, ktoré môžete povedať, časté omyly žiakov a odpovede na ich otázky.'],
   ['Štandardy ŠVP', 'Výkonové a obsahové štandardy ŠVP 2023 aj 2015, ku ktorým téma patrí, s odkazom na stranu v dokumente.'],
