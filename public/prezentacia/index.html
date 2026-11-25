@@ -1,0 +1,416 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Klbko na plátne</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=Caveat:wght@600;700&display=swap">
+<style>
+/* Koncept: štvorčekový zošit aplikácie Klbko ako nekonečné plátno; červená niť z klbka vedie kamerou od rámu k rámu. */
+:root{
+  --paper:#eef2f8; --grid:#d5deed; --card:#ffffff; --ink:#16214d; --muted:#55608a; --line:#c4cfe3;
+  --wool:#c81e63; --wool-soft:#fbe0ec; --wool-ink:#a3134c;
+  --w1:#e5376b; --w2:#ee7f1a; --w3:#12998a; --w4:#3b6be0; --w5:#8a4fd3;
+  --f-display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --f-body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  --f-hand:"Caveat","Comic Sans MS",cursive;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);overflow:hidden;
+  padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+#view{position:fixed;inset:0;overflow:hidden;cursor:default;touch-action:none;
+  background-color:var(--paper)}
+#world{position:absolute;left:0;top:0;width:9400px;height:6900px;transform-origin:0 0;will-change:transform;
+  background-image:linear-gradient(var(--grid) 2px,transparent 2px),linear-gradient(90deg,var(--grid) 2px,transparent 2px);background-size:56px 56px}
+#thread{position:absolute;inset:0;width:9400px;height:6900px;overflow:visible;pointer-events:none}
+#thread .t1{fill:none;stroke:var(--wool);stroke-width:14;stroke-linecap:round;stroke-linejoin:round}
+#thread .t2{fill:none;stroke:#fff;stroke-width:4;stroke-dasharray:8 26;stroke-linecap:round;opacity:.85}
+
+.fr{position:absolute;width:1600px;height:900px;background:var(--card);border:3px solid var(--line);border-radius:36px;
+  padding:72px 84px;display:flex;flex-direction:column;gap:30px;box-shadow:0 18px 50px rgba(22,33,77,.10);transform:translate(-50%,-50%) rotate(var(--r,0deg));overflow:hidden}
+.fr.head{background:var(--ink);color:#fff;border-color:var(--ink);justify-content:center;align-items:flex-start}
+.fr.head .no{font:700 64px/1 var(--f-hand);color:#ffb3cf}
+.fr.head h2{font:800 104px/1 var(--f-display);margin:0;letter-spacing:-.02em;text-wrap:balance}
+.eyebrow{font:700 26px/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--wool)}
+h2{font:800 76px/1.02 var(--f-display);letter-spacing:-.02em;margin:0;text-wrap:balance}
+h3{font:700 36px/1.1 var(--f-display);margin:0}
+p{margin:0;font-size:32px;line-height:1.4;max-width:30em}
+.hand{font:700 50px/1.05 var(--f-hand);color:var(--wool-ink)}
+.row{display:flex;gap:44px;min-height:0;flex:1}
+.col{display:flex;flex-direction:column;gap:22px;min-width:0;flex:1}
+.shot{border:3px solid var(--line);border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 10px 30px rgba(22,33,77,.14);min-height:0}
+.shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:top left;max-width:none}
+ul.pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:20px}
+ul.pts li{font-size:31px;line-height:1.35;padding-left:46px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:4px;top:.42em;width:22px;height:22px;border-radius:50%;background:var(--c,var(--wool))}
+ul.pts li b{font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:14px}
+.chip{font:600 28px/1 var(--f-body);padding:16px 24px;border-radius:99px;border:3px solid var(--c);background:color-mix(in srgb,var(--c) 12%,#fff)}
+.lv{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.lv div{border:3px solid var(--c);border-radius:20px;padding:20px;background:color-mix(in srgb,var(--c) 10%,#fff)}
+.lv b{display:block;font:700 30px/1.1 var(--f-display)}
+.lv span{font-size:23px;color:var(--muted);line-height:1.3;display:block;margin-top:8px}
+.steps{display:flex;gap:22px}
+.steps div{flex:1;border-radius:24px;padding:26px;background:var(--paper);display:flex;flex-direction:column;gap:12px}
+.steps i{font:800 64px/1 var(--f-display);font-style:normal;color:var(--c)}
+.steps b{font:700 32px/1.1 var(--f-display)}
+.steps span{font-size:25px;line-height:1.35;color:var(--muted)}
+.quote{font:500 36px/1.42 var(--f-body);border-left:10px solid var(--wool);padding:6px 0 6px 36px;max-width:none}
+.tl{display:flex;align-items:flex-start;gap:0;position:relative;margin-top:20px}
+.tl::before{content:"";position:absolute;left:30px;right:30px;top:30px;height:8px;border-radius:8px;background:var(--wool)}
+.tl div{flex:1;display:flex;flex-direction:column;gap:12px;position:relative;padding-right:18px}
+.tl div::before{content:"";width:60px;height:60px;border-radius:50%;background:#fff;border:8px solid var(--c);box-sizing:border-box}
+.tl b{font:800 40px/1 var(--f-display);color:var(--c)}
+.tl span{font-size:25px;line-height:1.32}
+.big{font:800 190px/0.9 var(--f-display);letter-spacing:-.04em;color:var(--wool)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.duo div{background:var(--paper);border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:10px}
+.duo b{font:700 33px/1.12 var(--f-display)}
+.duo span{font-size:26px;line-height:1.35;color:var(--muted)}
+.tag{align-self:flex-start;font:700 24px/1 var(--f-body);background:var(--wool-soft);color:var(--wool-ink);border-radius:99px;padding:12px 20px}
+
+/* titulná */
+.fr.title{width:2400px;height:1350px;border-radius:56px;padding:120px 150px;justify-content:center;gap:40px;
+  background-color:#fff;background-image:linear-gradient(var(--grid) 2px,transparent 2px),linear-gradient(90deg,var(--grid) 2px,transparent 2px);background-size:56px 56px}
+.brand{display:flex;align-items:center;gap:44px}
+.brand svg{width:250px;height:250px;flex:none}
+.brand h1{font:800 260px/0.9 var(--f-display);letter-spacing:-.04em;margin:0}
+.title .sub{font:600 58px/1.2 var(--f-body);color:var(--muted)}
+.title .hand{font-size:92px}
+.title .who{font:600 40px/1.3 var(--f-body)}
+
+/* ovládanie */
+.hud{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:10px;justify-content:center;
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));pointer-events:none}
+.hud>*{pointer-events:auto}
+.hud button{min-height:44px;min-width:44px;border-radius:12px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font:600 15px var(--f-body);padding:8px 14px;cursor:pointer;box-shadow:0 4px 14px rgba(22,33,77,.12)}
+.hud button:hover{border-color:var(--wool)}
+.hud button:focus-visible{outline:3px solid var(--wool);outline-offset:2px}
+.hud .cnt{font:600 15px var(--f-body);color:var(--ink);background:#fff;border-radius:12px;padding:12px 14px;min-width:84px;text-align:center;box-shadow:0 4px 14px rgba(22,33,77,.12);font-variant-numeric:tabular-nums}
+.hud.idle{opacity:0;transition:opacity .6s}
+.hint{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));font:500 13px var(--f-body);color:var(--muted);background:#fffc;border-radius:10px;padding:6px 10px}
+@media (max-width:640px){.hud .wide{display:none}.hint{display:none}}
+</style>
+
+<div id="view" aria-label="Prezentácia Klbko">
+ <div id="world">
+  <svg id="thread" viewBox="0 0 9400 6900" aria-hidden="true"><path class="t1" id="tp1"/><path class="t2" id="tp2"/></svg>
+
+  <!-- TITUL -->
+  <section class="fr title" data-x="4700" data-y="1000" data-w="2400" data-h="1350" id="f-titul">
+   <div class="brand">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="#c81e63"/><g fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".9"><path d="M9 18c10-5 22-4 30 4"/><path d="M6 26c11-6 25-4 34 5"/><path d="M11 37c8-8 8-22 2-30"/><path d="M21 42c6-11 5-25-2-35"/><path d="M31 41c5-10 5-22-1-32"/></g><path d="M38 38c5 3 8 1 9-3" fill="none" stroke="#c81e63" stroke-width="3" stroke-linecap="round"/></svg>
+    <h1>Klbko</h1>
+   </div>
+   <div class="sub">Od témy k hotovej pomôcke na hodinu, podľa ŠVP 2015 aj 2023</div>
+   <div class="hand">Jedna téma, veľa podôb.</div>
+   <div class="who">Miroslav Sopko · klbko.zavretaskola.sk</div>
+  </section>
+
+  <!-- ČASŤ 1 -->
+  <section class="fr head" data-x="2600" data-y="2250" data-w="1700" data-h="560" style="--r:-2deg;width:1700px;height:560px" id="f-cast1">
+   <div class="no">Časť 1</div>
+   <h2>O čom je Klbko a ako sa používa</h2>
+  </section>
+
+  <section class="fr" data-x="900" data-y="3150" id="f-problem">
+   <div class="eyebrow">Problém</div>
+   <h2>Dobrá pomôcka na hodinu stojí večer času</h2>
+   <div class="row">
+    <ul class="pts col">
+     <li style="--c:var(--w1)">Hľadať podklady, kresliť schému, vymýšľať otázky do kvízu.</li>
+     <li style="--c:var(--w2)">Overiť, či učivo sedí so štandardom ŠVP, a dnes súbežne platia dva programy.</li>
+     <li style="--c:var(--w3)">Pripraviť zjednodušenú verziu pre žiakov so ŠVVP.</li>
+    </ul>
+    <div class="col" style="flex:.7;justify-content:center"><div class="hand" style="font-size:64px">A to každý deň, v každom predmete.</div></div>
+   </div>
+  </section>
+
+  <section class="fr" data-x="2600" data-y="3150" style="--r:1.5deg" id="f-slub">
+   <div class="eyebrow">Čo Klbko sľubuje</div>
+   <h2>Učiteľ zadá tému a ročník a do piatich minút má hotovú pomôcku</h2>
+   <div class="row">
+    <ul class="pts col">
+     <li style="--c:var(--w4)">Sama odporučí podobu, ktorá sa k učivu najlepšie hodí, a povie prečo.</li>
+     <li style="--c:var(--w3)">Každý materiál je spojený so skutočnými štandardmi ŠVP 2015 aj 2023.</li>
+     <li style="--c:var(--w1)">Tri úrovne náročnosti a zjednodušená verzia pre žiakov so ŠVVP.</li>
+     <li style="--c:var(--w5)">Na interaktívnu tabuľu, na tablety žiakov alebo do tlače.</li>
+    </ul>
+   </div>
+  </section>
+
+  <section class="fr" data-x="4300" data-y="3150" id="f-krok1">
+   <div class="eyebrow">Krok 1</div>
+   <h2>Vyberte tému</h2>
+   <div class="row">
+    <div class="col" style="flex:.8">
+     <p>Napíšte vlastnú tému alebo otvorte jednu zo <b>122 hotových tém</b> zo 16 predmetov.</p>
+     <p>Hľadať sa dá aj inými slovami, filtrovať podľa predmetu a ročníka.</p>
+     <span class="tag">Hotová téma sa otvorí hneď, bez čakania na AI</span>
+    </div>
+    <div class="shot col" style="flex:1.25"><img src="img/02-katalog.jpg" alt="Katalóg hotových tém s náhľadmi"></div>
+   </div>
+  </section>
+
+  <section class="fr" data-x="4300" data-y="4200" style="--r:-1.5deg" id="f-krok2">
+   <div class="eyebrow">Krok 2</div>
+   <h2>Klbko odporučí podobu a povie prečo</h2>
+   <div class="row">
+    <div class="shot col" style="flex:1.4"><img src="img/03-tema.jpg" alt="Téma Vzduch v aplikácii s myšlienkovou mapou a ponukou podôb"></div>
+    <div class="col">
+     <p>Učivo o vzťahoch dostane myšlienkovú mapu, dej v čase časovú os, porovnanie Vennov diagram.</p>
+     <p>Inú podobu prepnete jedným klikom.</p>
+    </div>
+   </div>
+  </section>
+
+  <section class="fr" data-x="2600" data-y="4200" id="f-podoby">
+   <div class="eyebrow">Jedna téma, veľa podôb</div>
+   <h2>Z jednej témy jedenásť spracovaní a hra</h2>
+   <div class="row">
+    <div class="col">
+     <div class="chips">
+      <span class="chip" style="--c:var(--w1)">Animácia</span><span class="chip" style="--c:var(--w2)">Myšlienková mapa</span>
+      <span class="chip" style="--c:var(--w3)">Časová os</span><span class="chip" style="--c:var(--w4)">Vennov diagram</span>
+      <span class="chip" style="--c:var(--w5)">T-tabuľka</span><span class="chip" style="--c:var(--w1)">Rybia kosť</span>
+      <span class="chip" style="--c:var(--w2)">Cyklus</span><span class="chip" style="--c:var(--w3)">Strom</span>
+      <span class="chip" style="--c:var(--w4)">Kartičky</span><span class="chip" style="--c:var(--w5)">Kvíz</span>
+      <span class="chip" style="--c:var(--w1)">Tabuľka VVN</span><span class="chip" style="--c:var(--ink)">Zahraj sa</span>
+     </div>
+    </div>
+    <div class="shot col" style="flex:.95"><img src="img/10-animacia.jpg" alt="Animácia Ročné obdobia s očíslovanými popiskami"></div>
+   </div>
+  </section>
+
+  <section class="fr" data-x="900" data-y="4200" style="--r:1deg" id="f-urovne">
+   <div class="eyebrow">Pre každého žiaka</div>
+   <h2>Štyri úrovne jedným prepnutím</h2>
+   <div class="lv">
+    <div style="--c:var(--w3)"><b>Základ</b><span>Jadro učiva pre celú triedu.</span></div>
+    <div style="--c:var(--w4)"><b>Rozšírenie</b><span>Viac pojmov a súvislostí.</span></div>
+    <div style="--c:var(--w5)"><b>Výzva</b><span>Pre zvedavých a rýchlejších.</span></div>
+    <div style="--c:var(--w1)"><b>ŠVVP</b><span>Krátke vety, väčšie písmo, piktogramy.</span></div>
+   </div>
+   <div class="shot" style="flex:1"><img src="img/05-svvp.jpg" alt="Kolobeh vody v zjednodušenej verzii pre žiakov so ŠVVP" style="object-position:center 40%"></div>
+  </section>
+
+  <section class="fr" data-x="900" data-y="5250" id="f-sprievodca">
+   <div class="eyebrow">Nielen obrázok</div>
+   <h2>Sprievodca hodinou</h2>
+   <div class="row">
+    <ul class="pts col" style="flex:.75">
+     <li style="--c:var(--w3)"><b>Téma za minútu</b>: čo potrebujete vedieť vy.</li>
+     <li style="--c:var(--w4)"><b>Priebeh hodiny</b> s časmi a vetami, ktoré môžete povedať.</li>
+     <li style="--c:var(--w1)"><b>Na čo si dať pozor</b>: najčastejšie omyly žiakov.</li>
+     <li style="--c:var(--w5)"><b>Keď sa žiaci opýtajú</b>: odpovede vopred.</li>
+    </ul>
+    <div class="shot col"><img src="img/06-sprievodca.jpg" alt="Sprievodca hodinou k téme Vzduch"></div>
+   </div>
+  </section>
+
+  <section class="fr" data-x="2600" data-y="5250" style="--r:-1deg" id="f-svp">
+   <div class="eyebrow">Štátny vzdelávací program</div>
+   <h2>Štandardy pri každej téme, starý aj nový program</h2>
+   <div class="row">
+    <div class="col">
+     <p>Pri každej téme vidíte, ktorý obsahový a výkonový štandard pokrýva, s odkazom na stranu v dokumente.</p>
+     <p>Štandardy sa vyberajú z databázy skutočných textov. Umelá inteligencia si ich nevymýšľa.</p>
+     <span class="tag">ŠVP 2023 je povinný od 1. ročníka od školského roka 2026/2027</span>
+    </div>
+    <div class="shot col" style="flex:.9;align-self:center;height:auto"><img src="img/07-svp.jpg" alt="Panel Štandardy s kartami ŠVP 2023 a ŠVP 2015" style="height:auto"></div>
+   </div>
+  </section>
+
+  <section class="fr" data-x="4300" data-y="5250" id="f-tabula">
+   <div class="eyebrow">Krok 3</div>
+   <h2>Na tabuli odkrývate krok za krokom</h2>
+   <div class="row">
+    <div class="shot col" style="flex:1.45"><img src="img/08-tabula.jpg" alt="Režim tabule, cyklus sčítania cez desiatku sa odkrýva po uzloch"></div>
+    <div class="col">
+     <p>Ďalší uzol ukážete šípkou alebo medzerníkom.</p>
+     <p><b>Režim hádania</b> skryje popisy a žiaci tipujú.</p>
+    </div>
+   </div>
+  </section>
+
+  <section class="fr" data-x="4300" data-y="6300" style="--r:1.5deg" id="f-tlac">
+   <div class="eyebrow">Do lavíc</div>
+   <h2>Pracovný list, kľúč a hra</h2>
+   <div class="row">
+    <div class="shot col"><img src="img/09-tlac.jpg" alt="Náhľad tlače pracovného listu A4" style="object-position:center top"></div>
+    <div class="shot col"><img src="img/11-hra.jpg" alt="Hra Zahraj sa: triedenie kartičiek do skupín" style="object-position:center top"></div>
+   </div>
+   <p style="font-size:28px">Tlač na A4 s prázdnymi políčkami a kľúčom. Žiaci na tabletoch otvoria odkaz alebo QR kód, bez účtu.</p>
+  </section>
+
+  <section class="fr" data-x="2600" data-y="6300" id="f-sukromie">
+   <div class="eyebrow">Uloženie a súkromie</div>
+   <h2>Prípravu uložíte jedným klikom</h2>
+   <div class="duo">
+    <div><b>Odkaz na prípravu</b><span>Uložená príprava má vlastný odkaz. Kto ho má, môže ju otvoriť.</span></div>
+    <div><b>Poznámky o triede ostávajú u vás</b><span>Neodchádzajú na web, zostávajú v prehliadači učiteľa.</span></div>
+    <div><b>Zmazanie</b><span>Prípravu môžete kedykoľvek odstrániť z webu tlačidlom Zmazať.</span></div>
+    <div><b>Žiaci bez účtov</b><span>Žiak len zobrazuje hotový materiál. Umelá inteligencia sa pri ňom nevolá.</span></div>
+   </div>
+  </section>
+
+  <!-- ČASŤ 2 -->
+  <section class="fr head" data-x="7250" data-y="2250" data-w="1700" data-h="560" style="--r:2deg;width:1700px;height:560px" id="f-cast2">
+   <div class="no">Časť 2</div>
+   <h2>Ako sme Klbko robili</h2>
+  </section>
+
+  <section class="fr" data-x="6400" data-y="3150" id="f-zadanie">
+   <div class="eyebrow">Začiatok</div>
+   <h2>Anotácia prednášky ako záväzné zadanie</h2>
+   <p class="quote">„Učiteľ zadá tému a ročník a do piatich minút má hotovú vizuálnu pomôcku na hodinu… Z jednej témy pripraví desať podôb spracovania a sama odporučí tú, ktorá sa k učivu najlepšie hodí.“</p>
+   <p>Text anotácie sme nemenili. Aplikácia ho musí splniť bod po bode.</p>
+  </section>
+
+  <section class="fr" data-x="8100" data-y="3150" style="--r:-1.5deg" id="f-postup">
+   <div class="eyebrow">Postup</div>
+   <h2>Od klikateľnej ukážky k 122 témam</h2>
+   <div class="tl">
+    <div style="--c:var(--w1)"><b>Ukážka</b><span>Klikateľný návrh na odsúhlasenie s tromi témami.</span></div>
+    <div style="--c:var(--w2)"><b>Aplikácia</b><span>Webová aplikácia: tabuľa, tlač, ukladanie.</span></div>
+    <div style="--c:var(--w3)"><b>Knižnica</b><span>Témy po dávkach: 30, 62, 92, 122.</span></div>
+    <div style="--c:var(--w4)"><b>Kontroly</b><span>Recenzie, opravy a automatické testy po každej dávke.</span></div>
+   </div>
+   <div class="hand" style="margin-top:auto">Návrh vznikol v spolupráci s AI Claude, každú dávku sme spolu preverovali.</div>
+  </section>
+
+  <section class="fr" data-x="8100" data-y="4200" id="f-rozhodnutia">
+   <div class="eyebrow">Rozhodnutia</div>
+   <h2>Čo sme si stanovili na začiatku</h2>
+   <div class="duo">
+    <div><b>Témy pripravené vopred</b><span>Hotová téma je overená. AI ju len prispôsobí poznámkam o triede.</span></div>
+    <div><b>Štandardy len z databázy</b><span>AI vyberá zo skutočných textov ŠVP, nesmie ich formulovať sama.</span></div>
+    <div><b>AI len pre učiteľa</b><span>Volá sa na serveri. Žiacke zobrazenie je statické a bez účtov.</span></div>
+    <div><b>Metodiky ako podklad</b><span>Slúžia ako opora s odkazom na zdroj, nekopírujeme ich.</span></div>
+   </div>
+  </section>
+
+  <section class="fr" data-x="6400" data-y="4200" style="--r:1deg" id="f-kontrola">
+   <div class="eyebrow">Kvalita</div>
+   <h2>Každú tému kontrolujeme viackrát</h2>
+   <div class="row">
+    <ul class="pts col">
+     <li style="--c:var(--w1)"><b>Kontrolný zoznam</b> najčastejších chýb: absolútne tvrdenia, zamieňané pojmy, súlad s cyklom ŠVP.</li>
+     <li style="--c:var(--w2)"><b>Nezávislá recenzia</b> iným AI modelom a <b>register opráv</b> pri každej pripomienke.</li>
+     <li style="--c:var(--w3)"><b>Automatické testy</b>: každá téma, každá podoba, aj na tabuli v dvoch veľkostiach.</li>
+    </ul>
+    <div class="col" style="flex:.6;justify-content:center;gap:14px">
+     <div class="big">2×</div>
+     <div class="hand" style="font-size:46px">aspoň dve kontroly, kým téma ide do knižnice</div>
+    </div>
+   </div>
+  </section>
+
+  <section class="fr" data-x="6400" data-y="5250" id="f-technika">
+   <div class="eyebrow">Pod kapotou</div>
+   <h2>Z čoho je Klbko postavené</h2>
+   <div class="duo">
+    <div><b>Webová aplikácia</b><span>Beží v prehliadači na počítači, na tabuli aj na tablete, bez inštalácie.</span></div>
+    <div><b>Databáza ŠVP</b><span>Štandardy ŠVP 2015 a 2023 pre predmety základnej školy.</span></div>
+    <div><b>Knižnica 122 tém</b><span>Obrázky, animácie, kvízy a sprievodca hodinou ku každej téme.</span></div>
+    <div><b>Umelá inteligencia</b><span>Upraví tému podľa triedy alebo navrhne novú. Poskytovateľ sa dá vymeniť.</span></div>
+   </div>
+  </section>
+
+  <section class="fr" data-x="8100" data-y="5250" style="--r:-1deg" id="f-dalej">
+   <div class="eyebrow">Čo ďalej</div>
+   <h2>Pred pilotom na školách</h2>
+   <ul class="pts">
+    <li style="--c:var(--w3)">Overiť databázu ŠVP 2023 voči zneniu s Dodatkom č. 5, účinnému od 1. 9. 2026.</li>
+    <li style="--c:var(--w4)">Nastavenie triedy: podľa ktorého programu sa trieda učí.</li>
+    <li style="--c:var(--w5)">Učitelia hlásia chyby priamo v aplikácii tlačidlom <b>Nahlásiť chybu</b>. Každé hlásenie prejde kontrolou a oprava sa zapíše do registra.</li>
+    <li style="--c:var(--w1)">Prístupy pre školy a spoločná školská knižnica príprav.</li>
+   </ul>
+  </section>
+
+  <section class="fr title" data-x="7250" data-y="6380" data-w="2400" data-h="1100" style="height:1100px" id="f-koniec">
+   <div class="brand">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="#c81e63"/><g fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".9"><path d="M9 18c10-5 22-4 30 4"/><path d="M6 26c11-6 25-4 34 5"/><path d="M11 37c8-8 8-22 2-30"/><path d="M21 42c6-11 5-25-2-35"/><path d="M31 41c5-10 5-22-1-32"/></g><path d="M38 38c5 3 8 1 9-3" fill="none" stroke="#c81e63" stroke-width="3" stroke-linecap="round"/></svg>
+    <h1 style="font-size:200px">Ďakujem</h1>
+   </div>
+   <div class="sub">Vyskúšajte si Klbko: <b style="color:var(--ink)">klbko.zavretaskola.sk</b></div>
+   <div class="hand">Miroslav Sopko</div>
+  </section>
+ </div>
+</div>
+
+<div class="hint" id="hint">Šípky alebo medzerník · O = prehľad · F = celá obrazovka</div>
+<nav class="hud" id="hud" aria-label="Ovládanie prezentácie">
+ <button id="bPrev" type="button" aria-label="Predchádzajúci">←</button>
+ <span class="cnt" id="cnt" aria-live="polite">1 / 1</span>
+ <button id="bNext" type="button" aria-label="Ďalší">→</button>
+ <button id="bOv" type="button" class="wide">Prehľad</button>
+ <button id="bFs" type="button" class="wide">Celá obrazovka</button>
+</nav>
+
+<script>
+'use strict';
+const ORDER=['overview','f-titul','f-cast1','f-problem','f-slub','f-krok1','f-krok2','f-podoby','f-urovne','f-sprievodca','f-svp','f-tabula','f-tlac','f-sukromie','f-cast2','f-zadanie','f-postup','f-rozhodnutia','f-kontrola','f-technika','f-dalej','f-koniec'];
+const view=document.getElementById('view'),world=document.getElementById('world');
+const W=9400,H=6900;
+const frames={};
+document.querySelectorAll('.fr').forEach(f=>{
+ const x=+f.dataset.x,y=+f.dataset.y,w=+(f.dataset.w||1600),h=+(f.dataset.h||900);
+ const r=parseFloat(getComputedStyle(f).getPropertyValue('--r'))||0;
+ f.style.left=x+'px';f.style.top=y+'px';frames[f.id]={x,y,w,h,r};
+});
+frames.overview={x:W/2,y:H/2+60,w:W+300,h:H+300,r:0};
+
+// niť cez rámy v poradí prezentácie
+(function(){const pts=ORDER.slice(1).map(id=>[frames[id].x,frames[id].y]);
+ let d=`M${pts[0][0]} ${pts[0][1]}`;
+ for(let i=0;i<pts.length-1;i++){const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+  const c1=[p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6],c2=[p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6];
+  d+=` C${c1[0]} ${c1[1]} ${c2[0]} ${c2[1]} ${p2[0]} ${p2[1]}`}
+ document.getElementById('tp1').setAttribute('d',d);document.getElementById('tp2').setAttribute('d',d)})();
+
+let idx=0,cur=null,anim=null;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function cam(id){const f=frames[id],vw=view.clientWidth,vh=view.clientHeight,pad=id==='overview'?1:0.92;
+ const s=Math.min(vw/f.w,vh/f.h)*pad;return {s,x:f.x,y:f.y,r:f.r,vw,vh}}
+const tf=c=>`translate(${c.vw/2}px,${c.vh/2}px) scale(${c.s}) rotate(${-c.r}deg) translate(${-c.x}px,${-c.y}px)`;
+function go(i,instant){idx=Math.max(0,Math.min(ORDER.length-1,i));const to=cam(ORDER[idx]);
+ if(anim){anim.cancel();anim=null}
+ if(!cur||instant||reduce){world.style.transform=tf(to);cur=to;upd();return}
+ const from=cur,dist=Math.hypot(to.x-from.x,to.y-from.y);
+ const mid={vw:to.vw,vh:to.vh,x:(from.x+to.x)/2,y:(from.y+to.y)/2,r:(from.r+to.r)/2,
+  s:Math.min(from.s,to.s)*Math.max(0.45,Math.min(1,1-dist/9000))};
+ world.style.transform=tf(to);
+ anim=world.animate([{transform:tf(from)},{transform:tf(mid),offset:.5},{transform:tf(to)}],{duration:1350,easing:'cubic-bezier(.45,.05,.25,1)'});
+ anim.onfinish=()=>{anim=null};cur=to;upd()}
+function upd(){document.getElementById('cnt').textContent=idx===0?'Prehľad':`${idx} / ${ORDER.length-1}`;
+ try{history.replaceState(null,'','#'+ORDER[idx].replace('f-',''))}catch(e){}}
+const next=()=>go(idx+1),prev=()=>go(idx-1);
+document.getElementById('bNext').onclick=next;document.getElementById('bPrev').onclick=prev;
+document.getElementById('bOv').onclick=()=>go(0);
+const fs=()=>{const d=document.documentElement;if(!document.fullscreenElement){d.requestFullscreen?.().catch(()=>{})}else document.exitFullscreen?.()};
+document.getElementById('bFs').onclick=fs;
+addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;
+ if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();next()}
+ else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(e.key)){e.preventDefault();prev()}
+ else if(e.key==='o'||e.key==='O'||e.key==='Escape'){go(0)}
+ else if(e.key==='f'||e.key==='F'){fs()}
+ else if(e.key==='Home'){go(1)}else if(e.key==='End'){go(ORDER.length-1)}});
+// klik na rám v prehľade = skok na rám; klik inde = ďalší
+view.addEventListener('click',e=>{const f=e.target.closest('.fr');
+ if(idx===0&&f){go(ORDER.indexOf(f.id));return}
+ if(e.target.closest('.hud'))return;next()});
+// potiahnutie na dotykovej obrazovke
+let tx=null;view.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+view.addEventListener('touchend',e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)>50){dx<0?next():prev()}},{passive:true});
+addEventListener('resize',()=>{cur=null;go(idx,true)});
+// skrytie ovládania pri nečinnosti
+const hud=document.getElementById('hud'),hint=document.getElementById('hint');let t;
+const wake=()=>{hud.classList.remove('idle');clearTimeout(t);t=setTimeout(()=>{hud.classList.add('idle');hint.hidden=true},3500)};
+addEventListener('mousemove',wake);addEventListener('keydown',wake);wake();
+const start=ORDER.indexOf('f-'+location.hash.slice(1));
+go(start>0?start:0,true);
+document.fonts?.ready.then(()=>go(idx,true));
+</script>
+
+</body></html>
