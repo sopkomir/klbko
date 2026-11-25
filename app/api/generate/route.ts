@@ -25,7 +25,7 @@ const COPY: Record<string, [string, number]> = {
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => null);
   const type = b?.type, title = String(b?.title ?? '').trim().slice(0, 120), subject = String(b?.subject ?? '').slice(0, 60), grade = Number(b?.grade);
-  if (!['topic', 'form', 'guide'].includes(type) || !title || !(grade >= 1 && grade <= 9)) return bad('Doplňte tému, predmet a ročník.');
+  if (!['topic', 'form', 'guide'].includes(type) || !title || !(grade >= 0 && grade <= 9)) return bad('Doplňte tému, predmet a ročník.');
   const q: Q = { title, subject, grade, notes: String(b?.notes ?? ''), form: b?.form };
   if (type === 'form' && !FORMS.includes(String(q.form))) return bad('Neznáma podoba.');
   const lib = type === 'topic' ? libFind(title, subject, grade) : undefined;
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ library: full, note: 'AI teraz tému neupravila, otvoril som pripravenú verziu. Úpravu skúste neskôr.' });
       }
     } else if (type === 'topic') {
-      const cands = (['2023', '2015'] as Program[]).flatMap(program => find({ title, subject, grade, program, notes: q.notes }, 15).items);
+      const cands = grade === 0 ? [] : (['2023', '2015'] as Program[]).flatMap(program => find({ title, subject, grade, program, notes: q.notes }, 15).items);
       const { value: v, provider } = await askJson(topicPrompt(q, cands), x => !!cleanTopic(x));
       const allowed = new Set(cands.map(c => c.id));
       const c = cleanTopic(v)!;

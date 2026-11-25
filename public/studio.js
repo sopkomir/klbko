@@ -58,8 +58,10 @@ const FORMS=[
 const F=Object.fromEntries(FORMS.map(f=>[f.id,f]));
 const KIND={pojmy:{n:'pojmy a vzťahy',f:'mind'},chrono:{n:'chronológia',f:'timeline'},porovnanie:{n:'porovnanie',f:'venn'},pricina:{n:'príčiny a následky',f:'fish'},proces:{n:'proces, cyklus',f:'cycle'},hierarchia:{n:'hierarchia',f:'tree'}};
 const GOALS=[['vyklad','Výklad nového učiva'],['aktivacia','Aktivácia na začiatku hodiny'],['fixacia','Fixácia'],['opakovanie','Opakovanie'],['projekt','Projektová práca']];
-const SUBJECTS=['Človek a príroda','Človek a spoločnosť','Slovenský jazyk a literatúra','Matematika','Informatika','Biológia','Fyzika','Chémia','Dejepis','Geografia','Občianska náuka','Cudzí jazyk','Hudobná výchova','Výtvarná výchova','Človek a svet práce','Telesná a športová výchova'];
+const SUBJECTS=['Materská škola','Človek a príroda','Človek a spoločnosť','Slovenský jazyk a literatúra','Matematika','Informatika','Biológia','Fyzika','Chémia','Dejepis','Geografia','Občianska náuka','Cudzí jazyk','Hudobná výchova','Výtvarná výchova','Človek a svet práce','Telesná a športová výchova'];
 const LEVELS=[[1,'Základ'],[2,'Rozšírenie'],[3,'Výzva'],[4,'Zjednodušená (ŠVVP)']];
+const gL=g=>+g===0?'materská škola':g+'. ročník';
+const MS_SVP='https://www.minedu.sk/data/att/190/21698.2320f3.pdf';
 const cycleOf=g=>g<=3?'1. cyklus':g<=5?'2. cyklus':'3. cyklus';
 
 /* ---------- pripravené témy ---------- */
@@ -352,7 +354,7 @@ let flipT;function settle(){clearTimeout(flipT);flipT=setTimeout(()=>document.qu
 function paintCanvas(){
  const c=$('#canvas'),f=F[S.form],data=S.topic.forms[S.form],snap=flipSnap();
  c.querySelectorAll('.dg').forEach(d=>d._ro?.disconnect());
- const head=[el('h2',{},S.topic.title),el('div',{class:'sub'},`${f.n} · ${S.topic.grade}. ročník · ${S.topic.subject}`)];
+ const head=[el('h2',{},S.topic.title),el('div',{class:'sub'},`${f.n} · ${+S.topic.grade===0?S.topic.subject:gL(S.topic.grade)+' · '+S.topic.subject}`)];
  if(!data){
   const s=sample;c.replaceChildren(...head,el('p',{},`Podobu ${f.n} pre túto tému ešte nemáme.`),
    s?el('button',{class:'btn main',type:'button',onclick:()=>genForm(S.form)},'Pripraviť túto podobu cez AI'):'');return}
@@ -371,7 +373,12 @@ function paintWhy(){
  p.replaceChildren(...kids);
 }
 const stdCache={};
+function paintSvpMs(){const t=S.topic,p=$('#svpPanel'),src=el('a',{href:MS_SVP,target:'_blank',rel:'noopener'},'ŠVP pre predprimárne vzdelávanie (PDF)');
+ p.replaceChildren(el('h3',{},'Štandardy'),el('p',{class:'kind'},'ŠVP pre predprimárne vzdelávanie v materských školách (2016)'),
+  (t.svpms||[]).length?el('ul',{class:'std'},t.svpms.map(x=>el('li',{},x.t,el('small',{},`${x.kind||'výkonový štandard'} · ${x.where}`)))):el('p',{class:'warn'},'Pri vlastnej téme pre MŠ Klbko štandardy zatiaľ nevyberá. Nájdete ich v dokumente nižšie.'),
+  el('p',{class:'grnote'},'Výkonové štandardy ŠVP pre MŠ opisujú, čo dieťa zvládne na konci predprimárneho vzdelávania. Pri mladších deťoch sú cieľom, ku ktorému sa smeruje.'),el('p',{},src))}
 function paintSvp(){
+ if(+S.topic.grade===0){paintSvpMs();return}
  const t=S.topic,prog=S.prog==='v2015'?'2015':'2023',p=$('#svpPanel');
  const tabs=el('div',{class:'prog',role:'group','aria-label':'Štátny vzdelávací program'},[['v2023','ŠVP 2023'],['v2015','ŠVP 2015']].map(([id,n])=>el('button',{type:'button','aria-pressed':String(S.prog===id),onclick(){S.prog=id;paintSvp()}},n)));
  const box=el('div',{},el('p',{class:'warn'},'Hľadám štandardy…'));p.replaceChildren(el('h3',{},'Štandardy'),tabs,box);
@@ -435,7 +442,7 @@ function qList(form,data,lv,key){
  return null}
 function openPrint(){
  const t=S.topic,data=t.forms[S.form];if(!data)return;
- const lv=S.level,form=S.form,isQ=form==='cards'||form==='quiz',title=`${t.title}: ${F[form].n}`,foot=`Klbko · ${t.grade}. ročník · ${t.subject} · úroveň ${LEVELS[lv-1][1]}`;
+ const lv=S.level,form=S.form,isQ=form==='cards'||form==='quiz',title=`${t.title}: ${F[form].n}`,foot=`Klbko · ${+t.grade===0?t.subject:gL(t.grade)+' · '+t.subject} · úroveň ${LEVELS[lv-1][1]}`;
  const sheet=(...k)=>el('section',{class:'sheet'+(lv===4?' easy':'')},...k,el('div',{class:'foot'},foot));
  const ctxS=(hide)=>({level:lv,hide,sheet:true,width:674,icons:lv===4});
  const body1=isQ?qList(form,data,lv,false):form==='vvn'?el('div',{class:'dg vvn'},['Viem','Chcem vedieť','Naučil/a som sa'].map(h=>el('div',{class:'c'},el('h4',{},h),el('div',{class:'lines'},Array.from({length:12},()=>el('i',{}))))))
@@ -487,7 +494,7 @@ function genForm(form,quiet){const t=S.topic;ask({...base(),type:'form',form},v=
 const LIB='klbko-pripravy';
 const libGet=()=>{try{return JSON.parse(localStorage.getItem(LIB)||'[]')}catch{return[]}};
 const libPut=l=>{try{localStorage.setItem(LIB,JSON.stringify(l.slice(0,60)))}catch{}};
-function prepPayload(){const t=S.topic,keep=['title','subject','grade','notes','kind','why','alts','picked','guide','method','forms'];
+function prepPayload(){const t=S.topic,keep=['title','subject','grade','notes','kind','why','alts','picked','svpms','svpnote','guide','method','forms'];
  const tt={};keep.forEach(k=>{if(t[k]!==undefined)tt[k]=t[k]});return{kind:'prep',v:1,t:tt,f:S.form,l:S.level,h:S.hide,at:new Date().toISOString()}}
 let savedId=null,savedFor=null,dirty=true;
 function markDirty(){dirty=true;const b=$('#saveBtn');if(b&&!document.body.classList.contains('student'))b.classList.add('main')}
@@ -540,7 +547,7 @@ function openLibrary(){
  const close=overlay('Moje prípravy',body);
  if(!list.length){body.append(el('p',{},'Zatiaľ tu nič nie je. Prípravu uložíte tlačidlom Uložiť pod zadaním.'));return}
  body.append(el('p',{class:'warn'},'Zoznam je uložený v tomto prehliadači. Na inom zariadení otvorte prípravu cez jej odkaz pre učiteľa. Uložená príprava ostáva na webe, kým ju tu nezmažete. Vaše poznámky o triede sa na web neukladajú.'),
-  el('ul',{class:'liblist'},list.map(x=>el('li',{},el('div',{},el('b',{},x.title),el('small',{},`${x.subject} · ${x.grade}. ročník · ${fmt(x.at)}`)),
+  el('ul',{class:'liblist'},list.map(x=>el('li',{},el('div',{},el('b',{},x.title),el('small',{},`${+x.grade===0?x.subject:x.subject+' · '+gL(x.grade)} · ${fmt(x.at)}`)),
    el('div',{class:'libbtns'},el('button',{class:'btn main',type:'button',onclick:async()=>{close();if(!await loadPrep(x.id))setStatus('Prípravu sa nepodarilo otvoriť.',true)}},'Otvoriť'),
     el('button',{class:'btn',type:'button',onclick:()=>forgetPrep(x)},x.key||x.id.startsWith('m-')?'Zmazať':'Odstrániť zo zoznamu'))))))}
 async function forgetPrep(x){
@@ -655,25 +662,25 @@ let LIBX=[];
 async function openLibId(id){setStatus('Otváram pripravenú tému…');try{openLibTopic(await http('/api/temy?id='+encodeURIComponent(id)))}catch{setStatus('Tému sa nepodarilo otvoriť.',true)}}
 function paintSamples(){
  const subj=$('#fSubject').value,gr=Number($('#fGrade').value),mine=LIBX.filter(x=>x.subject===subj).sort((a,b)=>Math.abs(a.grade-gr)-Math.abs(b.grade-gr)||a.grade-b.grade);
- const dl=$('#libList');if(dl)dl.replaceChildren(...mine.map(x=>el('option',{value:x.title},x.grade+'. ročník')));
+ const dl=$('#libList');if(dl)dl.replaceChildren(...mine.map(x=>el('option',{value:x.title},gL(x.grade))));
  const box=$('#samples');
  if(!LIBX.length){box.replaceChildren(el('span',{},'Vyskúšajte:'),...Object.entries(TOPICS).map(([k,t])=>el('button',{class:'chip',type:'button','data-k':k,onclick:()=>loadTopic(k)},t.title)));return}
  const list=(mine.length?mine:LIBX).slice(0,7);
- box.replaceChildren(el('span',{},mine.length?'Hotové témy pre '+subj+':':'Hotové témy:'),...list.map(x=>el('button',{class:'chip'+(x.grade===gr?' on':''),type:'button',title:x.grade+'. ročník',onclick:()=>{$('#fTopic').value=x.title;openLibId(x.id)}},x.title,el('small',{},' '+x.grade+'.'))),
+ box.replaceChildren(el('span',{},mine.length?'Hotové témy pre '+subj+':':'Hotové témy:'),...list.map(x=>el('button',{class:'chip'+(x.grade===gr?' on':''),type:'button',title:gL(x.grade),onclick:()=>{$('#fTopic').value=x.title;openLibId(x.id)}},x.title,+x.grade===0?'':el('small',{},' '+x.grade+'.'))),
   ...Object.entries(TOPICS).filter(([,t])=>t.subject===subj).map(([k,t])=>el('button',{class:'chip',type:'button',onclick:()=>loadTopic(k)},t.title,el('small',{},' '+t.grade+'.'))),
   el('button',{class:'chip more',type:'button',onclick:openCatalog},'Všetky hotové témy ('+LIBX.length+') →'))}
 function openCatalog(){
  const fold=x=>String(x).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
  const gr=Number($('#fGrade').value),st={q:'',sub:'',near:false};
  const subs=[...new Set(LIBX.map(x=>x.subject))];
- const cards=LIBX.slice().sort((a,b)=>a.grade-b.grade).map(x=>{const b=el('button',{class:'tcard',type:'button',onclick:()=>{close();$('#fSubject').value=x.subject;$('#fGrade').value=x.grade;$('#fTopic').value=x.title;paintSamples();openLibId(x.id)}},x.img?el('img',{src:'/nahlady/'+x.id+'.jpg',alt:'',loading:'lazy',width:360,height:192}):el('span',{class:'noimg'},x.title.slice(0,1)),el('b',{},x.title),el('small',{},x.grade+'. ročník · '+x.subject));b._x=x;b._h=fold([x.title,...(x.aka||[]),x.subject].join(' '));return b});
+ const cards=LIBX.slice().sort((a,b)=>a.grade-b.grade).map(x=>{const b=el('button',{class:'tcard',type:'button',onclick:()=>{close();$('#fSubject').value=x.subject;$('#fGrade').value=x.grade;$('#fTopic').value=x.title;paintSamples();openLibId(x.id)}},x.img?el('img',{src:'/nahlady/'+x.id+'.jpg',alt:'',loading:'lazy',width:360,height:192}):el('span',{class:'noimg'},x.title.slice(0,1)),el('b',{},x.title),el('small',{},+x.grade===0?x.subject:gL(x.grade)+' · '+x.subject));b._x=x;b._h=fold([x.title,...(x.aka||[]),x.subject].join(' '));return b});
  const grid=el('div',{class:'tcards'},cards),empty=el('p',{class:'muted cat-empty',hidden:true},'Takú tému zatiaľ nemáme. Napíšte ju do poľa Téma a Klbko ju pripraví s pomocou AI.');
  const count=el('span',{class:'cat-count'});
  const apply=()=>{const q=fold(st.q.trim());let n=0;cards.forEach(c=>{const ok=(!q||q.split(/\s+/).every(w=>c._h.includes(w)))&&(!st.sub||c._x.subject===st.sub)&&(!st.near||Math.abs(c._x.grade-gr)<=1);c.hidden=!ok;if(ok)n++});count.textContent=n+(n===1?' téma':n>=2&&n<=4?' témy':' tém');empty.hidden=n>0};
  const search=el('input',{type:'search',placeholder:'Hľadať tému, napríklad sopky, zlomky, Štúr…','aria-label':'Hľadať tému',oninput(){st.q=this.value;apply()}});
  const chip=(label,val)=>el('button',{class:'chip',type:'button','aria-pressed':String(st.sub===val),onclick(){st.sub=val;filt.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed','false'));this.setAttribute('aria-pressed','true');apply()}},label);
  const filt=el('div',{class:'chips cat-subs'},chip('Všetky predmety',''),subs.map(s=>chip(s,s)));
- const near=el('label',{class:'cat-near'},el('input',{type:'checkbox',onchange(){st.near=this.checked;apply()}}),' Len okolo '+gr+'. ročníka');
+ const near=el('label',{class:'cat-near'},el('input',{type:'checkbox',onchange(){st.near=this.checked;apply()}}),(gr===0?' Len materská škola':' Len okolo '+gr+'. ročníka'));
  const body=el('div',{class:'sharebox lib catalog'},
   el('div',{class:'cat-head'},search,el('div',{class:'cat-row'},near,count),filt),
   el('p',{class:'muted'},'Témy sú pripravené vopred a otvoria sa hneď, bez čakania na AI. Ak pod zadaním pridáte poznámky o svojej triede, AI vybranú tému upraví na mieru.'),
@@ -684,7 +691,9 @@ function openCatalog(){
 function loadTopic(k){S.key=k;S.topic=TOPICS[k];S.form=recOf(S.topic);if(!S.topic.forms[S.form])S.form=KIND[S.topic.kind].f;S.hide=false;paintAll();setStatus('')}
 (function init(){
  $('#fSubject').replaceChildren(...SUBJECTS.map(s=>el('option',{},s)));
- $('#fGrade').replaceChildren(...Array.from({length:9},(_,i)=>el('option',{value:i+1},`${i+1}. (${cycleOf(i+1)})`)));
+ $('#fGrade').replaceChildren(el('option',{value:0},'MŠ (predprimárne)'),...Array.from({length:9},(_,i)=>el('option',{value:i+1},`${i+1}. (${cycleOf(i+1)})`)));
+ $('#fSubject').addEventListener('change',()=>{const ms=$('#fSubject').value==='Materská škola';if(ms)$('#fGrade').value=0;else if($('#fGrade').value==='0')$('#fGrade').value=1});
+ $('#fGrade').addEventListener('change',()=>{if($('#fGrade').value==='0')$('#fSubject').value='Materská škola';else if($('#fSubject').value==='Materská škola')$('#fSubject').value=SUBJECTS[1]});
  $('#fGoal').replaceChildren(...GOALS.map(([v,n])=>el('option',{value:v},n)));
  $('#fTopic').setAttribute('list','libList');document.body.append(el('datalist',{id:'libList'}));paintSamples();
  $('#fSubject').addEventListener('change',paintSamples);$('#fGrade').addEventListener('change',paintSamples);

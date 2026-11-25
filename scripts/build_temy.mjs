@@ -41,7 +41,12 @@ for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.mjs')).sort()) {
       if (r[2] != null && (r[0] === '2023' ? r[2] !== cyc(t.grade) : Math.abs(r[2] - t.grade) > 1)) errs.push(`${at}: ${id} nepatrí k ${t.grade}. ročníku`);
     }
     // každá téma má štandard ŠVP 2023, alebo vysvetlenie, prečo ho nemá
-    if (!(t.std ?? []).some(id => svp[+String(id).slice(1)]?.[0] === '2023') && !t.svpnote) errs.push(`${at}: chýba štandard ŠVP 2023 aj vysvetlenie svpnote`);
+    if (t.grade === 0) {
+      // materská škola: štandardy ŠVP pre predprimárne vzdelávanie (2016) sú priamo v téme
+      if (t.subject !== 'Materská škola') errs.push(`${at}: téma MŠ musí mať predmet Materská škola`);
+      if ((t.std ?? []).length) errs.push(`${at}: téma MŠ nemá mať štandardy ZŠ`);
+      if (!(Array.isArray(t.svpms) && t.svpms.length && t.svpms.every(x => x.t && x.where))) errs.push(`${at}: chýbajú štandardy MŠ (svpms)`);
+    } else if (!(t.std ?? []).some(id => svp[+String(id).slice(1)]?.[0] === '2023') && !t.svpnote) errs.push(`${at}: chýba štandard ŠVP 2023 aj vysvetlenie svpnote`);
     const g = t.guide;
     if (!(g?.primer && g.steps?.length >= 3 && g.traps?.length >= 2 && g.qa?.length >= 1)) errs.push(`${at}: neúplný sprievodca`);
     if (!(t.method?.goals?.length && t.method.plan?.length)) errs.push(`${at}: neúplná metodika`);
