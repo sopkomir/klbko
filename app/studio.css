@@ -575,3 +575,28 @@ body.student #libBtn,body.student #saveBtn,body.student .topnav{display:none}
  .ov.board .scenewrap.side{grid-template-columns:minmax(0,1fr) 280px;align-items:start;width:min(100%,calc((100dvh - 250px)*1.875 + 292px))}
  .ov.board .scenewrap.side .strip{grid-template-columns:minmax(0,1fr);max-height:calc(100dvh - 250px);overflow:auto}
 }
+
+/* Obrázky pre materskú školu */
+.pics{display:grid;gap:16px}
+.pgroup h4{margin:0 0 8px;font:700 19px/1.2 var(--f-display);border-bottom:3.4px solid var(--c);padding-bottom:5px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.pic{border:2px solid var(--c);border-radius:16px;background:color-mix(in srgb,var(--c) 8%,#ffffff);padding:10px 10px 8px;display:grid;gap:6px;justify-items:center;align-content:start;cursor:pointer;color:#16214d;transition:transform .12s}
+.pic .pimg{width:100%;aspect-ratio:1;display:block}
+.pic .pimg svg{width:100%;height:100%;display:block}
+.pic .pcap{font:600 calc(var(--node-fs) + 3px)/1.15 var(--f-easy);text-align:center}
+.pics.nocap .pcap{visibility:hidden}
+.pic:active{transform:scale(.96)}
+.pic.ok{outline:6px solid var(--ok);outline-offset:2px}
+.pic.no{animation:pshake .4s}
+@keyframes pshake{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+@media (prefers-reduced-motion:reduce){.pic.no{animation:none}}
+.pbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pmsg{font-weight:600;color:var(--muted);font-size:15px}
+.speak-tg{display:inline-flex;gap:6px;align-items:center;margin-bottom:6px}
+.speak-tg svg{width:18px;height:18px}
+.speak-tg[aria-pressed="false"]{color:var(--muted)}
+.board .pgrid{grid-template-columns:repeat(auto-fill,minmax(clamp(150px,13vw,240px),1fr));gap:16px}
+
+.sheet .pgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.sheet .pic{border-color:#555;background:#fff}
+@media (max-width:640px){.pgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}

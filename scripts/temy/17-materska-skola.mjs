@@ -1,6 +1,9 @@
 // Materská škola – prvá dávka (10 tém). Štandardy: ŠVP pre predprimárne vzdelávanie v MŠ (2016), doslovné znenie.
 // Deti väčšinou nečítajú: hlavná je animácia, kartičky a kvíz číta učiteľka nahlas.
 
+import { OBR, CISLA } from './obrazky-ms.mjs';
+const P = (t, k, l) => { if (!OBR[k]) throw new Error('chýba obrázok ' + k); return l ? { t, svg: OBR[k], l } : { t, svg: OBR[k] }; };
+const G = (t, items, l) => (l ? { t, items, l } : { t, items });
 const CaP = 'Človek a príroda', CaS = 'Človek a spoločnosť', MAT = 'Matematika a práca s informáciami', ZaP = 'Zdravie a pohyb', UaK = 'Umenie a kultúra';
 const S = (t, where) => ({ t, where, kind: 'výkonový štandard' });
 
@@ -26,7 +29,7 @@ export default [
 {
  id: 'ms-pocasie', title: 'Aké je dnes počasie', aka: ['Počasie', 'Pozorujeme počasie', 'Slnko, dážď, sneh, vietor', 'Kalendár počasia'], subject: 'Materská škola', grade: 0, kind: 'pojmy', rec: 'scene',
  why: 'Deti počasie vidia a cítia každý deň. Obrázok so štyrmi oknami ukáže slnko, oblaky s vetrom, dážď a sneh vedľa seba, takže ich deti ľahko porovnajú.',
- alts: [['mind', 'Keď sa s deťmi rozprávate, čo si pri ktorom počasí obliecť.'], ['cards', 'Na hru „ukáž, aké je počasie“.'], ['quiz', 'Na krátke overenie po pozorovaní.']],
+ alts: [['pics', 'Obrázky so slovom, ktoré aplikácia prečíta nahlas, a hra Nájdi obrázok.'], ['mind', 'Keď sa s deťmi rozprávate, čo si pri ktorom počasí obliecť.'], ['cards', 'Na hru „ukáž, aké je počasie“.'], ['quiz', 'Na krátke overenie po pozorovaní.']],
  std: [], svpms: [S('Identifikuje prvky počasia a realizuje krátkodobé pozorovania zmien v počasí.', `${CaP} · Vnímanie prírody`)],
  method: { goals: ['Dieťa pomenuje slnečno, oblačno, dážď, sneh a vietor.', 'Dieťa povie, aké je počasie dnes, podľa pozorovania z okna.', 'Dieťa priradí oblečenie k počasiu.'],
   plan: [['5 min', 'Pozorovanie z okna: čo vidíme na oblohe?'], ['10 min', 'Animácia počasia na tabuli, deti napodobňujú zvuky dažďa a vetra.'], ['10 min', 'Hra: čo si oblečiem? Deti priraďujú oblečenie k počasiu.'], ['5 min', 'Značka do kalendára počasia.']],
@@ -40,6 +43,7 @@ export default [
   traps: [['Keď je zima, sneží.', 'Môže byť zima a slnečno, alebo zima a sucho. Sneh padá, len keď z oblakov padajú zrážky a vo vzduchu je dosť chladno.'], ['Vietor robia stromy, keď sa hýbu.', 'Je to naopak: vietor hýbe stromami. Stromy ukazujú, že fúka.'], ['Slnko v zime nesvieti.', 'Slnko svieti aj v zime, len je nižšie na oblohe a menej hreje.']],
   qa: [['Odkiaľ sa berie dážď?', 'Z oblakov. Oblak je z malých kvapôčok vody. Keď sa spoja do veľkých kvapiek, padajú dolu ako dážď.'], ['Prečo je niekedy dúha?', 'Keď svieti slnko a zároveň prší, svetlo sa v kvapkách rozloží na farby.']] },
  forms: {
+  pics: { groups: [G('Počasie', [P('slnko', 'slnko'), P('oblak', 'oblak'), P('dážď', 'dazd'), P('sneh', 'sneh'), P('vietor', 'vietor'), P('dúha', 'duha', 3)]), G('Čo si oblečiem', [P('dáždnik', 'dazdnik'), P('gumáky', 'gumaky'), P('čiapka', 'ciapka'), P('rukavice', 'rukavice'), P('šiltovka', 'siltovka'), P('šál', 'sal')])] },
   scene: { svg: `<svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="640" fill="#bfe6f7"/><rect x="300" width="300" height="640" fill="#cfd8dc"/><rect x="600" width="300" height="640" fill="#90a4ae"/><rect x="900" width="300" height="640" fill="#e3f2fd"/>
 <g transform="translate(150 150)"><g stroke="#ffb300" stroke-width="12" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" values="0;360" dur="20s" repeatCount="indefinite"/><path d="M0 -95v-30M0 95v30M-95 0h-30M95 0h30M67 67l21 21M-67 -67l-21 -21M67 -67l21 -21M-67 67l-21 21"/></g><circle r="62" fill="#ffd54f"/></g>
 <g><animateTransform attributeName="transform" type="translate" values="0 0;40 0;0 0" dur="6s" repeatCount="indefinite"/>${cloud(410, 120, 0.9)}${cloud(520, 200, 0.7, '#eceff1')}</g>
@@ -70,7 +74,7 @@ ${flower(120, 560, '#ec407a', 0)}${flower(200, 590, '#ab47bc', 1)}<g transform="
 {
  id: 'ms-pocitame', title: 'Počítame do 10', aka: ['Čísla do 10', 'Počítanie', 'Koľko je', 'Viac a menej', 'Číselný rad'], subject: 'Materská škola', grade: 0, kind: 'pojmy', rec: 'scene',
  why: 'Deti sa učia počítať na veciach, ktoré vidia. Na lúke je jedno slnko, dva oblaky, tri vtáky, štyri stromy a päť kvetov, takže každý počet sa dá ukázať prstom.',
- alts: [['cards', 'Na hru „koľko ich je“ s predmetmi z triedy.'], ['quiz', 'Na porovnávanie: kde je viac a kde menej.']],
+ alts: [['pics', 'Obrázky so slovom, ktoré aplikácia prečíta nahlas, a hra Nájdi obrázok.'], ['cards', 'Na hru „koľko ich je“ s predmetmi z triedy.'], ['quiz', 'Na porovnávanie: kde je viac a kde menej.']],
  std: [], svpms: [S('Vymenuje čísla od 1 do 10 tak, ako idú za sebou.', `${MAT} · Čísla a vzťahy`), S('V obore do 10 určí počítaním po jednej počet predmetov v skupine.', `${MAT} · Čísla a vzťahy`), S('Pre dve skupiny určí, kde je viac, kde je menej alebo rovnako veľa predmetov podľa zisteného počtu', `${MAT} · Čísla a vzťahy`)],
  method: { goals: ['Dieťa vymenuje čísla od 1 do 10 po poradí.', 'Dieťa určí počet predmetov do 10 tak, že ukazuje na každý a počíta po jednej.', 'Dieťa porovná dve skupiny: kde je viac a kde menej.'],
   plan: [['5 min', 'Počítanka na prstoch od 1 do 10.'], ['10 min', 'Lúka na tabuli: deti počítajú slnko, oblaky, vtáky, stromy a kvety.'], ['10 min', 'Porovnávanie skupín kociek: kde je viac?'], ['5 min', 'Hra: tlesknite toľkokrát, koľko ukážem prstov.']],
@@ -84,6 +88,7 @@ ${flower(120, 560, '#ec407a', 0)}${flower(200, 590, '#ab47bc', 1)}<g transform="
   traps: [['Dieťa vie odrecitovať 1 až 10, tak vie počítať.', 'Recitovanie je iné ako počítanie vecí. Sledujte, či dieťa priraďuje ku každej veci jedno číslo.'], ['Väčšie veci znamenajú väčší počet.', 'Tri veľké stromy sú menej ako päť malých kvetov. Počet nezávisí od veľkosti.'], ['Keď veci roztiahneme, je ich viac.', 'Počet sa nezmení, keď veci posunieme. Overte to s deťmi znova spočítaním.']],
   qa: [['Čo je pred jednotkou?', 'Nula. Nula znamená, že tam nie je nič.'], ['Ktoré číslo je najväčšie?', 'Neexistuje. Ku každému číslu vieme pridať ešte jeden.']] },
  forms: {
+  pics: { groups: [G('Koľko je jabĺk?', CISLA.map((w, i) => P(w, 'cislo' + (i + 1), i >= 5 ? 2 : 0)))] },
   scene: { svg: `<svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg"><rect width="1200" height="640" fill="#bfe6f7"/><rect y="430" width="1200" height="210" fill="#9ccc65"/><ellipse cx="900" cy="460" rx="420" ry="50" fill="#aed581"/>
 <g transform="translate(130 100)"><g stroke="#ffb300" stroke-width="10" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" values="0;360" dur="18s" repeatCount="indefinite"/><path d="M0 -78v-24M0 78v24M-78 0h-24M78 0h24M55 55l17 17M-55 -55l-17 -17M55 -55l17 -17M-55 55l-17 17"/></g><circle r="52" fill="#ffd54f"/></g>
 <g><animateTransform attributeName="transform" type="translate" values="0 0;30 0;0 0" dur="7s" repeatCount="indefinite"/>${cloud(430, 110, 0.85)}${cloud(640, 80, 0.75)}</g>
@@ -103,7 +108,7 @@ ${flower(680, 580, '#ec407a', 0)}${flower(790, 580, '#ff7043', 0.4)}${flower(900
 {
  id: 'ms-tvary', title: 'Tvary okolo nás', aka: ['Geometrické tvary', 'Kruh, štvorec, trojuholník', 'Obdĺžnik', 'Guľa a kocka', 'Tvary'], subject: 'Materská škola', grade: 0, kind: 'porovnanie', rec: 'scene',
  why: 'Tvary sa deti najlepšie učia na veciach okolo seba. Domček na obrázku je poskladaný zo štvorca, trojuholníka a obdĺžnika a na oblohe svieti kruhové slnko.',
- alts: [['ttable', 'Pre predškolákov: čo kreslíme na papier a čo chytíme do ruky.'], ['cards', 'Na hľadanie tvarov v triede.'], ['quiz', 'Na overenie názvov tvarov.']],
+ alts: [['pics', 'Obrázky so slovom, ktoré aplikácia prečíta nahlas, a hra Nájdi obrázok.'], ['ttable', 'Pre predškolákov: čo kreslíme na papier a čo chytíme do ruky.'], ['cards', 'Na hľadanie tvarov v triede.'], ['quiz', 'Na overenie názvov tvarov.']],
  std: [], svpms: [S('V skupine útvarov identifikuje (aj hmatom) kruh, štvorec, obdĺžnik, trojuholník.', `${MAT} · Geometria a meranie`), S('Približne nakreslí kruh, štvorec, obdĺžnik, trojuholník.', `${MAT} · Geometria a meranie`), S('Určí (aj len hmatom), pomenuje a vymodeluje guľu, kocku, valec.', `${MAT} · Geometria a meranie`)],
  method: { goals: ['Dieťa pomenuje a ukáže kruh, štvorec, obdĺžnik a trojuholník.', 'Dieťa nájde tvary na veciach v triede.', 'Dieťa približne nakreslí kruh, štvorec a trojuholník.'],
   plan: [['5 min', 'Vrecko s tvarmi: deti hmatom hádajú tvar.'], ['10 min', 'Domček na tabuli: z akých tvarov je postavený?'], ['10 min', 'Hľadanie tvarov v triede.'], ['5 min', 'Kreslenie domčeka z tvarov.']],
@@ -117,6 +122,7 @@ ${flower(680, 580, '#ec407a', 0)}${flower(790, 580, '#ff7043', 0.4)}${flower(900
   traps: [['Obdĺžnik je natiahnutý štvorec, preto je to tiež štvorec.', 'Štvorec má všetky strany rovnaké. Obdĺžnik má dve strany dlhšie.'], ['Otočený štvorec je už iný tvar.', 'Keď štvorec otočíme na roh, je to stále štvorec. Tvar sa otočením nemení.'], ['Lopta je kruh.', 'Lopta je guľa, dá sa chytiť do ruky. Kruh nakreslíme na papier.']],
   qa: [['Je kosoštvorec tiež štvorec?', 'Len niekedy. Kosoštvorec má všetky strany rovnaké, ale jeho rohy nemusia byť pravé. Ak sú pravé, je to štvorec.'], ['Prečo sú kolesá okrúhle?', 'Kruh nemá rohy, preto sa koleso hladko kotúľa.']] },
  forms: {
+  pics: { groups: [G('Tvary', [P('kruh', 'kruh'), P('štvorec', 'stvorec'), P('obdĺžnik', 'obdlznik'), P('trojuholník', 'trojuholnik')]), G('Telesá', [P('guľa', 'gula'), P('kocka', 'kocka'), P('valec', 'valec')], 3)] },
   scene: { svg: `<svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="ball" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#ff8a80"/><stop offset="1" stop-color="#d32f2f"/></radialGradient></defs><rect width="1200" height="640" fill="#e1f5fe"/><rect y="560" width="1200" height="80" fill="#9ccc65"/>
 <rect x="300" y="300" width="260" height="260" fill="#ffe082" stroke="#f9a825" stroke-width="6"/><path d="M270 302L430 160L590 302z" fill="#ef5350" stroke="#c62828" stroke-width="6" stroke-linejoin="round"/><rect x="460" y="420" width="70" height="140" fill="#8d6e63" stroke="#5d4037" stroke-width="5"/><circle cx="515" cy="495" r="6" fill="#ffd54f"/><circle cx="375" cy="380" r="34" fill="#81d4fa" stroke="#0277bd" stroke-width="6"/>
 <g transform="translate(900 130)"><circle r="70" fill="#ffd54f"><animate attributeName="r" values="66;74;66" dur="3s" repeatCount="indefinite"/></circle></g>
@@ -138,7 +144,7 @@ ${flower(680, 580, '#ec407a', 0)}${flower(790, 580, '#ff7043', 0.4)}${flower(900
 {
  id: 'ms-mladata', title: 'Zvieratá a ich mláďatá', aka: ['Domáce zvieratá', 'Mláďatá', 'Zvieratá na dvore', 'Na farme', 'Mama a mláďa'], subject: 'Materská škola', grade: 0, kind: 'porovnanie', rec: 'scene',
  why: 'Na dvore stojí každá mama so svojím mláďaťom. Deti porovnajú, čím sú si podobné, a naučia sa, ako sa mláďa volá.',
- alts: [['ttable', 'Keď chcete dvojice mama a mláďa usporiadať do tabuľky.'], ['cards', 'Na hru „kto je moja mama“.'], ['quiz', 'Na overenie mien mláďat.']],
+ alts: [['pics', 'Obrázky so slovom, ktoré aplikácia prečíta nahlas, a hra Nájdi obrázok.'], ['ttable', 'Keď chcete dvojice mama a mláďa usporiadať do tabuľky.'], ['cards', 'Na hru „kto je moja mama“.'], ['quiz', 'Na overenie mien mláďat.']],
  std: [], svpms: [S('Identifikuje rôznorodosť živočíšnej ríše.', `${CaP} · Živočíchy`), S('Rozpoznáva mláďatá vybraných živočíšnych druhov a pomenúva ich.', `${CaP} · Živočíchy`)],
  method: { goals: ['Dieťa pomenuje štyri domáce zvieratá a ich mláďatá.', 'Dieťa priradí mláďa k mame.', 'Dieťa napodobní hlas zvieraťa.'],
   plan: [['5 min', 'Hádanka podľa hlasu: kto robí bú, kot-kot, bé, kroch?'], ['10 min', 'Dvor na tabuli: mama a mláďa.'], ['10 min', 'Hra Kto je moja mama: deti hľadajú dvojice obrázkov.'], ['5 min', 'Pohybová hra: napodobňujeme zvieratá.']],
@@ -152,6 +158,7 @@ ${flower(680, 580, '#ec407a', 0)}${flower(790, 580, '#ff7043', 0.4)}${flower(900
   traps: [['Kuriatko je mláďa kohúta.', 'Kuriatka sa liahnu z vajíčok, ktoré znesie sliepka. Kohút je otec.'], ['Mláďa vyzerá rovnako ako mama, len je menšie.', 'Niektoré mláďatá vyzerajú inak: kuriatko je žlté a páperisté, sliepka má perie.'], ['Všetky mláďatá pijú mlieko.', 'Mlieko pijú mláďatá cicavcov, napríklad teliatko a jahniatko. Kuriatka zobú zrno.']],
   qa: [['Prečo krava dáva mlieko?', 'Mlieko vzniká na kŕmenie teliatka. Ľudia kravy chovajú aj kvôli mlieku.'], ['Ako sa volá mláďa koňa?', 'Žriebä.']] },
  forms: {
+  pics: { groups: [G('Mamy', [P('krava', 'krava'), P('sliepka', 'sliepka'), P('ovca', 'ovca'), P('sviňa', 'svina')]), G('Mláďatá', [P('teliatko', 'tela'), P('kuriatko', 'kuriatko'), P('jahniatko', 'jahna'), P('prasiatko', 'prasiatko')])] },
   scene: { svg: (() => {
    const cow = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-55" y="20" width="14" height="50" fill="#5d4037"/><rect x="-25" y="20" width="14" height="50" fill="#5d4037"/><rect x="15" y="20" width="14" height="50" fill="#5d4037"/><rect x="40" y="20" width="14" height="50" fill="#5d4037"/><ellipse rx="75" ry="42" fill="#fafafa" stroke="#616161" stroke-width="4"/><ellipse cx="-30" cy="-8" rx="20" ry="14" fill="#3e2723"/><ellipse cx="20" cy="12" rx="16" ry="12" fill="#3e2723"/><g transform="translate(78 -28)"><ellipse rx="28" ry="24" fill="#fafafa" stroke="#616161" stroke-width="4"/><ellipse cx="10" cy="12" rx="18" ry="12" fill="#f8bbd0"/><circle cx="-6" cy="-6" r="4" fill="#212121"/><path d="M-16 -22l-10 -14M8 -22l8 -14" stroke="#bcaaa4" stroke-width="6" stroke-linecap="round"/></g></g>`;
    const sheep = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-35" y="15" width="12" height="45" fill="#424242"/><rect x="20" y="15" width="12" height="45" fill="#424242"/><g fill="#fff" stroke="#bdbdbd" stroke-width="3"><circle cx="-35" r="28"/><circle cx="0" cy="-12" r="32"/><circle cx="32" r="28"/><circle cx="0" cy="14" r="28"/></g><g transform="translate(60 -12)"><ellipse rx="20" ry="24" fill="#424242"/><circle cx="6" cy="-6" r="4" fill="#fff"/></g></g>`;
@@ -176,7 +183,7 @@ ${pig(470, 585, 0.8)}${pig(610, 600, 0.45)}</svg>`; })(),
 {
  id: 'ms-ulica', title: 'Bezpečne na ulici', aka: ['Dopravná výchova', 'Priechod pre chodcov', 'Semafor', 'Chodec', 'Cez cestu'], subject: 'Materská škola', grade: 0, kind: 'proces', rec: 'scene',
  why: 'Na obrázku je ulica s chodníkom, priechodom a semaforom pre chodcov. Auto prejde, keď majú chodci červenú, a potom ulica stíchne. Deti tak vidia, prečo čakáme.',
- alts: [['timeline', 'Keď nacvičujete postup krok za krokom: ako prejsť cez cestu.'], ['cards', 'Na otázky pred vychádzkou.'], ['quiz', 'Na overenie pravidiel.']],
+ alts: [['pics', 'Obrázky so slovom, ktoré aplikácia prečíta nahlas, a hra Nájdi obrázok.'], ['timeline', 'Keď nacvičujete postup krok za krokom: ako prejsť cez cestu.'], ['cards', 'Na otázky pred vychádzkou.'], ['quiz', 'Na overenie pravidiel.']],
  std: [], svpms: [S('Pozná nebezpečenstvá súvisiace s cestnou premávkou.', `${CaS} · Dopravná výchova`), S('Pozná a dodržiava základné pravidlá správania účastníkov cestnej premávky týkajúce sa chodcov.', `${CaS} · Dopravná výchova`), S('Pozná rôzne druhy dopravných prostriedkov.', `${CaS} · Dopravná výchova`), S('Pozná význam vybraných dopravných značiek.', `${CaS} · Dopravná výchova`)],
  method: { goals: ['Dieťa ukáže chodník a priechod pre chodcov.', 'Dieťa povie, čo znamená červený a zelený panáčik.', 'Dieťa predvedie, ako prejsť cez cestu s dospelým.'],
   plan: [['5 min', 'Rozhovor: kade chodíš do škôlky?'], ['10 min', 'Ulica na tabuli: chodník, priechod, semafor, značka.'], ['10 min', 'Nácvik v triede: priechod z papiera, semafor z dvoch kruhov.'], ['5 min', 'Zopakovanie postupu a reflexné prvky.']],
@@ -190,6 +197,7 @@ ${pig(470, 585, 0.8)}${pig(610, 600, 0.45)}</svg>`; })(),
   traps: [['Na zelenú môžem bežať bez pozerania.', 'Aj na zelenú najprv pozrieme, či autá zastavili, a potom prejdeme pokojne, nebežíme.'], ['Keď vodiča vidím ja, vidí aj on mňa.', 'Vodič malé dieťa za autom alebo v tme často nevidí. Preto stojíme na okraji, kde nás vidno, a nosíme reflexné prvky.'], ['Za loptou môžem rýchlo vybehnúť.', 'Za loptou do cesty nikdy nevybiehame. Zavoláme dospelého.']],
   qa: [['Prečo má semafor pre chodcov len dve farby?', 'Chodcom stačí vedieť, či stáť alebo ísť. Semafor pre autá má tri farby.'], ['Čo je to reflexný prvok?', 'Pásik alebo vesta, ktorá sa v svetle áut rozžiari. Vodič nás tak uvidí zďaleka.']] },
  forms: {
+  pics: { groups: [G('Na ulici', [P('Stoj!', 'stoj'), P('Choď!', 'chod'), P('priechod pre chodcov', 'priechod'), P('značka priechodu', 'znacka', 2), P('reflexná vesta', 'vesta')]), G('Dopravné prostriedky', [P('auto', 'auto'), P('autobus', 'autobus'), P('bicykel', 'bicykel'), P('vlak', 'vlak')])] },
   scene: { svg: `<svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg"><rect width="1200" height="640" fill="#e3f2fd"/><g fill="#b0bec5"><rect x="40" y="90" width="160" height="230"/><rect x="230" y="40" width="140" height="280"/><rect x="900" y="70" width="170" height="250"/></g><g fill="#fff59d"><rect x="70" y="120" width="40" height="40"/><rect x="130" y="120" width="40" height="40"/><rect x="70" y="200" width="40" height="40"/><rect x="260" y="80" width="30" height="40"/><rect x="310" y="80" width="30" height="40"/><rect x="930" y="110" width="40" height="40"/><rect x="1000" y="110" width="40" height="40"/></g>
 <rect y="320" width="1200" height="60" fill="#cfd8dc"/><rect y="380" width="1200" height="150" fill="#546e7a"/><rect y="530" width="1200" height="60" fill="#cfd8dc"/><rect y="590" width="1200" height="50" fill="#9ccc65"/><path d="M0 455H520M760 455H1200" stroke="#fff" stroke-width="6" stroke-dasharray="40 30"/>
 <g fill="#fafafa">${[0, 1, 2, 3, 4, 5].map(i => `<rect x="${545 + i * 34}" y="388" width="20" height="134"/>`).join('')}</g>
@@ -217,7 +225,7 @@ ${person(870, 585, 210, '#5d4037', '#1e88e5', 'short', 0)}${person(930, 585, 120
 {
  id: 'ms-ruky', title: 'Umývame si ruky', aka: ['Hygiena', 'Umývanie rúk', 'Čisté ruky', 'Mydlo a voda', 'Hygienické návyky'], subject: 'Materská škola', grade: 0, kind: 'proces', rec: 'timeline',
  why: 'Umývanie rúk je postup, ktorý sa opakuje každý deň v rovnakom poradí. Kroky za sebou si deti zapamätajú a pri umývadle ich nájdu na obrázkoch.',
- alts: [['scene', 'Keď chcete ukázať umývadlo, mydlo a uterák.'], ['mind', 'Keď sa rozprávate, kedy si ruky umývame.'], ['cards', 'Na otázky pri umývadle.']],
+ alts: [['pics', 'Obrázky so slovom, ktoré aplikácia prečíta nahlas, a hra Nájdi obrázok.'], ['scene', 'Keď chcete ukázať umývadlo, mydlo a uterák.'], ['mind', 'Keď sa rozprávate, kedy si ruky umývame.'], ['cards', 'Na otázky pri umývadle.']],
  std: [], svpms: [S('Má osvojené základné hygienické návyky (použitie toalety a toaletného papiera, umývanie rúk po použití toalety, umývanie rúk pred jedlom a po zašpinení sa atď.).', `${ZaP} · Hygiena a sebaobslužné činnosti`), S('Ovláda základné sebaobslužné činnosti.', `${ZaP} · Hygiena a sebaobslužné činnosti`)],
  method: { goals: ['Dieťa si umyje ruky v správnom poradí krokov.', 'Dieťa povie, kedy si ruky umývame.', 'Dieťa vysvetlí, prečo používame mydlo.'],
   plan: [['5 min', 'Pokus s trblietkami: „mikróby“ prejdú z ruky na ruku.'], ['10 min', 'Kroky umývania na tabuli.'], ['10 min', 'Umývanie pri umývadle podľa krokov.'], ['5 min', 'Kedy si umývame ruky? Rozhovor a kartičky.']],
@@ -231,6 +239,7 @@ ${person(870, 585, 210, '#5d4037', '#1e88e5', 'short', 0)}${person(930, 585, 120
   traps: [['Ruky sú čisté, keď nevidno špinu.', 'Mikróby sú také malé, že ich nevidíme. Preto si ruky umývame aj vtedy, keď vyzerajú čisto.'], ['Stačí ruky opláchnuť.', 'Bez mydla a trenia zostane na rukách veľa mikróbov.'], ['Ruky si utrieme do nohavíc.', 'Ruky utrieme do vlastného uteráka. Na mokrých rukách sa mikróby šíria ľahšie.']],
   qa: [['Čo sú mikróby?', 'Veľmi malé živé tvory, ktoré nevidíme. Niektoré nám môžu spôsobiť chorobu.'], ['Prečo kýchame do lakťa?', 'Aby sme kvapôčky s mikróbmi nepreniesli na ruky a ďalej na hračky.']] },
  forms: {
+  pics: { groups: [G('Umývame si ruky', [P('voda', 'voda'), P('mydlo', 'mydlo'), P('trieme ruky', 'trieme'), P('uterák', 'uterak')]), G('Kedy si umývame ruky', [P('pred jedlom', 'jedlo'), P('po hre vonku', 'piesok'), P('po smrkaní', 'vreckovka', 2)])] },
   timeline: { note: 'Kroky umývania rúk.', events: [
    { y: '1', t: 'Namočím si ruky vodou.', e: 'Voda.', ic: 'drop' },
    { y: '2', t: 'Namydlím si ruky.', e: 'Mydlo.', ic: 'cell' },
@@ -263,7 +272,7 @@ ${person(870, 585, 210, '#5d4037', '#1e88e5', 'short', 0)}${person(930, 585, 120
 {
  id: 'ms-ovocie-zelenina', title: 'Ovocie a zelenina', aka: ['Ovocie', 'Zelenina', 'Zdravé jedlo', 'Záhrada', 'Zdravá výživa'], subject: 'Materská škola', grade: 0, kind: 'porovnanie', rec: 'scene',
  why: 'V záhrade deti vidia, kde čo rastie: jablko na strome, jahody pri zemi, mrkva v zemi a kapusta na hriadke. Potom ich roztriedia na ovocie a zeleninu.',
- alts: [['ttable', 'Keď deti triedia ovocie a zeleninu do dvoch skupín.'], ['cards', 'Na hádanie podľa chuti a hmatu.'], ['quiz', 'Na overenie.']],
+ alts: [['pics', 'Obrázky so slovom, ktoré aplikácia prečíta nahlas, a hra Nájdi obrázok.'], ['ttable', 'Keď deti triedia ovocie a zeleninu do dvoch skupín.'], ['cards', 'Na hádanie podľa chuti a hmatu.'], ['quiz', 'Na overenie.']],
  std: [], svpms: [S('Rozpozná rôzne druhy ovocia a zeleniny a uvedomí si význam ich konzumácie pre správnu životosprávu.', `${CaP} · Rastliny`), S('Uvádza príklady zdravej a nezdravej výživy.', `${ZaP} · Zdravie a zdravý životný štýl`)],
  method: { goals: ['Dieťa pomenuje päť druhov ovocia a zeleniny.', 'Dieťa roztriedi obrázky na ovocie a zeleninu.', 'Dieťa povie, prečo je dobré jesť ovocie a zeleninu.'],
   plan: [['5 min', 'Kúzelné vrecko: hmatom hádame ovocie a zeleninu.'], ['10 min', 'Záhrada na tabuli: kde čo rastie?'], ['10 min', 'Triedenie do dvoch košíkov: ovocie a zelenina.'], ['5 min', 'Ochutnávka a rozhovor o zdravej desiate.']],
@@ -277,6 +286,7 @@ ${person(870, 585, 210, '#5d4037', '#1e88e5', 'short', 0)}${person(930, 585, 120
   traps: [['Ovocie je sladké a zelenina nie.', 'Mrkva je sladkastá a citrón je kyslý. Podľa chuti sa ovocie a zelenina rozlíšiť nedajú.'], ['Všetko ovocie rastie na stromoch.', 'Jahody rastú nízko pri zemi, maliny na kríkoch.'], ['Zemiak je ovocie, lebo rastie v zemi ako mrkva.', 'Zemiak nie je ovocie. Ako jedlo ho dávame k zelenine alebo prílohám.']],
   qa: [['Prečo má jablko jadierka?', 'Z jadierok môže vyrásť nová jabloň.'], ['Prečo jeme ovocie a zeleninu?', 'Majú vitamíny, ktoré nám pomáhajú byť zdraví a mať silu.']] },
  forms: {
+  pics: { groups: [G('Ovocie', [P('jablko', 'jablko'), P('hruška', 'hruska'), P('jahoda', 'jahoda'), P('banán', 'banan'), P('slivka', 'slivka', 2), P('čerešne', 'ceresne', 3)]), G('Zelenina', [P('mrkva', 'mrkva'), P('kapusta', 'kapusta'), P('cibuľa', 'cibula'), P('reďkovka', 'redkovka', 2), P('šalát', 'salat', 3)])] },
   scene: { svg: `<svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg"><rect width="1200" height="640" fill="#e1f5fe"/><rect y="420" width="1200" height="220" fill="#8d6e63"/><rect y="400" width="1200" height="30" fill="#7cb342"/>
 <rect x="160" y="200" width="30" height="210" fill="#6d4c41"/><circle cx="175" cy="170" r="120" fill="#66bb6a"/><circle cx="90" cy="210" r="70" fill="#66bb6a"/><circle cx="260" cy="210" r="70" fill="#66bb6a"/>
 <g fill="#e53935">${[[120, 150], [210, 120], [250, 220], [140, 240], [190, 200]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="16"/>`).join('')}</g><g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;0 175;0 175" keyTimes="0;0.6;0.8;1" dur="5s" repeatCount="indefinite"/><circle cx="80" cy="230" r="16" fill="#e53935"/></g>
@@ -297,7 +307,7 @@ ${person(870, 585, 210, '#5d4037', '#1e88e5', 'short', 0)}${person(930, 585, 120
 {
  id: 'ms-rodina', title: 'Moja rodina', aka: ['Rodina', 'Členovia rodiny', 'Mama a otec', 'Starí rodičia', 'Súrodenci'], subject: 'Materská škola', grade: 0, kind: 'hierarchia', rec: 'scene',
  why: 'Na obrázku sa celá rodina stretla pri dome. Deti pomenujú, kto je kto, a postupne pochopia, že maminu mamu voláme babka.',
- alts: [['tree', 'Pre predškolákov: kto patrí ku komu v rodine.'], ['cards', 'Na otázky o vlastnej rodine.'], ['quiz', 'Na príbuzenské vzťahy.']],
+ alts: [['pics', 'Obrázky so slovom, ktoré aplikácia prečíta nahlas, a hra Nájdi obrázok.'], ['tree', 'Pre predškolákov: kto patrí ku komu v rodine.'], ['cards', 'Na otázky o vlastnej rodine.'], ['quiz', 'Na príbuzenské vzťahy.']],
  std: [], svpms: [S('Vymenuje členov blízkej rodiny, identifikuje príbuzenské vzťahy v blízkej rodine.', `${CaS} · Ľudia v blízkom a širšom okolí`)],
  method: { goals: ['Dieťa vymenuje členov svojej blízkej rodiny.', 'Dieťa pomenuje babku, dedka, mamu, otca, brata a sestru.', 'Dieťa povie, kto je maminou alebo otcovou mamou.'],
   plan: [['5 min', 'Rozhovor: kto býva s tebou doma?'], ['10 min', 'Rodina na tabuli.'], ['10 min', 'Kreslenie mojej rodiny.'], ['5 min', 'Hra na rodinu s bábkami.']],
@@ -311,6 +321,7 @@ ${person(870, 585, 210, '#5d4037', '#1e88e5', 'short', 0)}${person(930, 585, 120
   traps: [['Každá rodina má mamu, otca a deti.', 'Rodiny sú rôzne. Rodinu tvoria ľudia, ktorí sa o seba starajú a majú sa radi.'], ['Babka je každá stará pani.', 'Babka je mama mojej mamy alebo môjho otca. Iným starším ľuďom tak hovoríme len zo zdvorilosti.'], ['Brat musí byť starší.', 'Brat aj sestra môžu byť starší alebo mladší.']],
   qa: [['Prečo mám dve babky?', 'Jedna je mamina mama a druhá je otcova mama.'], ['Je pes tiež rodina?', 'Pre veľa ľudí áno, patrí k domácnosti. Príbuzný však nie je.']] },
  forms: {
+  pics: { groups: [G('Moja rodina', [P('babka', 'babka'), P('dedko', 'dedko'), P('mama', 'mama'), P('otec', 'otec'), P('brat', 'brat'), P('sestra', 'sestra')])] },
   scene: { svg: `<svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg"><rect width="1200" height="640" fill="#fff3e0"/><rect y="520" width="1200" height="120" fill="#a5d6a7"/><g transform="translate(860 140)"><rect width="300" height="380" fill="#ffccbc"/><path d="M-30 0L150 -110L330 0z" fill="#d84315"/><rect x="40" y="60" width="80" height="80" fill="#bbdefb" stroke="#fff" stroke-width="6"/><rect x="180" y="60" width="80" height="80" fill="#bbdefb" stroke="#fff" stroke-width="6"/><rect x="115" y="230" width="70" height="150" fill="#8d6e63"/></g>
 <g transform="translate(80 120)"><circle r="45" fill="#ffd54f"><animate attributeName="r" values="42;48;42" dur="4s" repeatCount="indefinite"/></circle></g>
 ${person(120, 560, 270, '#bdbdbd', '#8e24aa', 'bun', 0)}${person(230, 560, 285, '#9e9e9e', '#6d4c41', 'bald', 0)}
@@ -334,7 +345,7 @@ ${person(620, 560, 170, '#ffb300', '#43a047', 'short', 1)}${person(710, 560, 130
 {
  id: 'ms-farby', title: 'Farby a miešanie farieb', aka: ['Farby', 'Miešanie farieb', 'Základné farby', 'Zmiešané farby', 'Maľujeme'], subject: 'Materská škola', grade: 0, kind: 'porovnanie', rec: 'scene',
  why: 'Tri kruhy sa na obrázku prekrývajú a tam, kde sa stretnú, vznikne nová farba. Deti tak vidia miešanie farieb skôr, než ho samy vyskúšajú štetcom.',
- alts: [['ttable', 'Keď zapisujete, čo s čím zmiešame a čo vznikne.'], ['cards', 'Na pokusy pri maľovaní.'], ['quiz', 'Na overenie.']],
+ alts: [['pics', 'Obrázky so slovom, ktoré aplikácia prečíta nahlas, a hra Nájdi obrázok.'], ['ttable', 'Keď zapisujete, čo s čím zmiešame a čo vznikne.'], ['cards', 'Na pokusy pri maľovaní.'], ['quiz', 'Na overenie.']],
  std: [], svpms: [S('Pomenuje základné a zmiešané farby.', `${UaK} · Výtvarná výchova`), S('Ovláda základy miešania farieb.', `${UaK} · Výtvarná výchova`), S('Farbami vyjadruje pocity.', `${UaK} · Výtvarná výchova`)],
  method: { goals: ['Dieťa pomenuje červenú, žltú, modrú, oranžovú, zelenú a fialovú.', 'Dieťa zmieša dve farby a povie, čo vzniklo.', 'Dieťa vyberie farbu podľa nálady.'],
   plan: [['5 min', 'Hľadanie farieb v triede.'], ['10 min', 'Kruhy na tabuli: kde sa farby stretnú?'], ['10 min', 'Miešanie temperami na palete.'], ['5 min', 'Akú farbu má dnes moja nálada?']],
@@ -348,6 +359,7 @@ ${person(620, 560, 170, '#ffb300', '#43a047', 'short', 1)}${person(710, 560, 130
   traps: [['Zmiešaním vždy vznikne pekná farba.', 'Keď zmiešame veľa farieb naraz, vznikne tmavá, hnedastá farba.'], ['Zelená je základná farba.', 'Pri maľovaní ju vieme namiešať zo žltej a modrej, preto je zmiešaná.'], ['Biela sa mieša ako ostatné.', 'Bielou farbu zosvetlíme a čiernou stmavíme. S deťmi to skúšajte samostatne.']],
   qa: [['Prečo je tráva zelená?', 'Listy a tráva majú zelené farbivo, ktoré rastlinám pomáha rásť zo slnečného svetla.'], ['Ako vznikne ružová?', 'Keď do červenej pridáme bielu.']] },
  forms: {
+  pics: { groups: [G('Základné farby', [P('červená', 'cervena'), P('žltá', 'zlta'), P('modrá', 'modra')]), G('Zmiešané farby', [P('oranžová', 'oranzova'), P('zelená', 'zelena'), P('fialová', 'fialova'), P('ružová', 'ruzova', 2)])] },
   scene: { svg: `<svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="fA"><circle cx="520" cy="250" r="150"/></clipPath><clipPath id="fB"><circle cx="680" cy="250" r="150"/></clipPath><clipPath id="fC"><circle cx="600" cy="390" r="150"/></clipPath></defs><rect width="1200" height="640" fill="#fffdf7"/>
 <circle cx="520" cy="250" r="150" fill="#e53935"/><circle cx="680" cy="250" r="150" fill="#fdd835"/><circle cx="600" cy="390" r="150" fill="#1e88e5"/>
 <g clip-path="url(#fA)"><circle cx="680" cy="250" r="150" fill="#fb8c00"><animate attributeName="opacity" values="0;1;1;1" keyTimes="0;0.15;0.9;1" dur="9s" repeatCount="indefinite"/></circle></g>
@@ -372,7 +384,7 @@ ${person(620, 560, 170, '#ffb300', '#43a047', 'short', 1)}${person(710, 560, 130
 {
  id: 'ms-pocity', title: 'Moje pocity', aka: ['Pocity', 'Emócie', 'Radosť a smútok', 'Hnev a strach', 'Nálada'], subject: 'Materská škola', grade: 0, kind: 'pojmy', rec: 'scene',
  why: 'Štyri tváre ukazujú radosť, smútok, hnev a strach. Deti podľa očí a úst spoznajú pocit a povedia, čo im pomáha, keď ho cítia.',
- alts: [['mind', 'Keď sa rozprávate, čo pri ktorom pocite pomáha.'], ['cards', 'Na hru na zrkadlo: ukáž pocit tvárou.'], ['quiz', 'Na rozpoznanie pocitov a dohodnuté pravidlá.']],
+ alts: [['pics', 'Obrázky so slovom, ktoré aplikácia prečíta nahlas, a hra Nájdi obrázok.'], ['mind', 'Keď sa rozprávate, čo pri ktorom pocite pomáha.'], ['cards', 'Na hru na zrkadlo: ukáž pocit tvárou.'], ['quiz', 'Na rozpoznanie pocitov a dohodnuté pravidlá.']],
  std: [], svpms: [S('Opíše aktuálne emócie.', `${CaS} · Ľudské vlastnosti a emócie`), S('Vyjadruje pocity zo zážitku, vypočutej rozprávky alebo príbehu – pozitívne i negatívne.', `${CaS} · Ľudské vlastnosti a emócie`), S('Rešpektuje dohodnuté pravidlá spoločensky prijateľného správania.', `${CaS} · Základy etikety`)],
  method: { goals: ['Dieťa pomenuje radosť, smútok, hnev a strach.', 'Dieťa povie, ako sa práve cíti.', 'Dieťa uvedie, čo môže urobiť, keď sa hnevá alebo bojí.'],
   plan: [['5 min', 'Ranný kruh: ako sa dnes cítiš?'], ['10 min', 'Tváre na tabuli: spoznáš pocit?'], ['10 min', 'Hra na zrkadlo a dýchanie ako balón.'], ['5 min', 'Dohoda v triede: čo robíme, keď sa hneváme.']],
@@ -386,6 +398,7 @@ ${person(620, 560, 170, '#ffb300', '#43a047', 'short', 1)}${person(710, 560, 130
   traps: [['Hnev je zlý pocit.', 'Hnev je normálny pocit. Nesprávne je niekomu ublížiť. Hnev povieme slovami.'], ['Chlapci neplačú.', 'Plakať môže každý. Plač ukazuje, že je nám smutno alebo nás niečo bolí.'], ['Keď sa bojím, som zbabelec.', 'Strach nás chráni pred nebezpečenstvom. Pomôže povedať to dospelému.']],
   qa: [['Prečo plačem, keď sa teším?', 'Niekedy je radosť taká veľká, že sa nám zarosia oči.'], ['Môžem cítiť dva pocity naraz?', 'Áno. Môžeš sa tešiť na výlet a zároveň sa trochu báť.']] },
  forms: {
+  pics: { groups: [G('Moje pocity', [P('radosť', 'radost'), P('smútok', 'smutok'), P('hnev', 'hnev'), P('strach', 'strach')])] },
   scene: { svg: (() => {
    const face = (cx, fill, mouth, brows, extra = '') => `<g transform="translate(${cx} 300)"><circle r="115" fill="${fill}" stroke="#ffffff" stroke-width="8"/><circle cx="-40" cy="-25" r="13" fill="#263238"/><circle cx="40" cy="-25" r="13" fill="#263238"/>${brows}${mouth}${extra}</g>`;
    return `<svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg"><rect width="1200" height="640" fill="#f3e5f5"/><g fill="#e1bee7">${[80, 360, 640, 920].map((x, i) => `<rect x="${x + 10}" y="120" width="260" height="360" rx="40"/>`).join('')}</g>

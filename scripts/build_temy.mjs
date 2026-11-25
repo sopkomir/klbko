@@ -8,7 +8,7 @@ const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 const dir = path.join(root, 'scripts/temy');
 const svp = JSON.parse(fs.readFileSync(path.join(root, 'data/svp.json'), 'utf8')).rows;
 const ICONS = new Set('sun cloud rain drop snow river mountain plant factory people crown book cross castle sword cell bolt star map'.split(' '));
-const FORMS = ['scene', 'mind', 'timeline', 'venn', 'ttable', 'fish', 'cycle', 'tree', 'cards', 'quiz', 'vvn'];
+const FORMS = ['scene', 'pics', 'mind', 'timeline', 'venn', 'ttable', 'fish', 'cycle', 'tree', 'cards', 'quiz', 'vvn'];
 const KIND = { pojmy: 'mind', chrono: 'timeline', porovnanie: 'venn', pricina: 'fish', proces: 'cycle', hierarchia: 'tree' };
 const SHAPE = {
   mind: v => Array.isArray(v?.branches) && v.branches.length >= 3, timeline: v => Array.isArray(v?.events) && v.events.length >= 3,
@@ -17,11 +17,12 @@ const SHAPE = {
   tree: v => Array.isArray(v?.root?.kids) && v.root.kids.length >= 2, vvn: v => ['know', 'want', 'learned'].every(k => Array.isArray(v?.[k])),
   quiz: v => Array.isArray(v) && v.length >= 3 && v.every(q => Array.isArray(q.o) && q.o[q.k] !== undefined && q.w),
   cards: v => Array.isArray(v) && v.length >= 4 && v.every(c => c.q && c.a),
+  pics: v => Array.isArray(v?.groups) && v.groups.length >= 1 && v.groups.every(g => g.t && Array.isArray(g.items) && g.items.length >= 2 && g.items.every(x => x.t && /^<svg[\s>]/.test(x.svg) && !/<text|<script|<image|style=/i.test(x.svg))),
   scene: v => /^<svg[\s>]/.test(v?.svg) && /<animate/.test(v.svg) && !/<text|<script|<image|style=/i.test(v.svg) && v.points?.length >= 3 && v.points.every(p => p.t && p.x >= 0 && p.x <= 100 && p.y >= 0 && p.y <= 100),
 };
 const errs = [];
 const topics = [];
-for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.mjs')).sort()) {
+for (const f of fs.readdirSync(dir).filter(f => /^\d+-.*\.mjs$/.test(f)).sort()) {
   const list = (await import(pathToFileURL(path.join(dir, f)).href)).default;
   for (const t of list) {
     const at = `${f}:${t.id}`;

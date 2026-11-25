@@ -35,6 +35,8 @@ const P={
  quiz:'<path d="M9 9a3 3 0 1 1 4 3c-1 .5-1 1-1 2M12 18h.01"/><circle cx="12" cy="12" r="10"/>',
  vvn:'<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M9 4v16M15 4v16"/>',
  play:'<circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/>',
+ image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
+ sound:'<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6M18.500 6.500a8 8 0 0 1 0 11"/>',
  eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
  screen:'<rect x="2" y="4" width="20" height="13" rx="1"/><path d="M12 17v4M8 21h8"/>',
  print:'<path d="M6 9V3h12v6M6 18H3v-8h18v8h-3M6 14h12v7H6z"/>'
@@ -45,6 +47,7 @@ const ic=(n,c='pic')=>{const s=document.createElementNS('http://www.w3.org/2000/
 /* ---------- číselníky ---------- */
 const FORMS=[
  {id:'scene',n:'Animácia',ic:'play',a:'živý obrázok'},
+ {id:'pics',n:'Obrázky',ic:'image',a:'obrázky so slovom nahlas'},
  {id:'mind',n:'Myšlienková mapa',ic:'mind',a:'pojmy a vzťahy'},
  {id:'timeline',n:'Časová os',ic:'line',a:'chronológia'},
  {id:'venn',n:'Vennov diagram',ic:'venn',a:'porovnanie'},
@@ -249,7 +252,33 @@ function aiScene(d,c){const lv=c.level,pts=d.points.filter(x=>vis(x,lv)),svg=cle
  pinLayout(sc);motionBtn(sc);
  return el('div',{class:'dg scenewrap side'},sc,el('div',{class:'strip'},ns))}
 
+/* ---------- čítanie nahlas (materská škola) ---------- */
+const SPEECH={on:true,v:null,loaded:false};
+try{SPEECH.on=localStorage.getItem('klbko-hlas')!=='0'}catch(e){}
+const canSpeak=()=>typeof window!=='undefined'&&'speechSynthesis' in window&&'SpeechSynthesisUtterance' in window;
+function pickVoice(){try{const vs=speechSynthesis.getVoices();if(!vs.length)return;SPEECH.loaded=true;SPEECH.v=vs.find(v=>/^sk/i.test(v.lang))||vs.find(v=>/^cs/i.test(v.lang))||null}catch(e){}}
+if(canSpeak()){pickVoice();try{speechSynthesis.addEventListener('voiceschanged',pickVoice)}catch(e){}}
+function say(t){if(!canSpeak()||!SPEECH.on||!t)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t));u.lang=SPEECH.v?.lang||'sk-SK';if(SPEECH.v)u.voice=SPEECH.v;u.rate=.85;speechSynthesis.speak(u)}catch(e){}}
+const isMS=()=>!!S.topic&&+S.topic.grade===0;
+document.addEventListener('click',e=>{if(!isMS()||!SPEECH.on)return;const t=e.target.closest?.('[data-say],.pin,.strip .n,.card');if(!t||t.closest('.sheet'))return;
+ const txt=t.dataset.say||(t.classList.contains('card')?t.querySelector('span')?.textContent:t.classList.contains('pin')?t.querySelector('span')?.textContent:t.querySelector('b')?.textContent);
+ if(txt&&!t.classList.contains('hid'))say(txt)});
+function findGame(root,btn,msg){const all=[...root.querySelectorAll('.pic')];if(all.length<2)return;
+ if(root._game){say('Nájdi: '+root._game.cur.dataset.say);return}
+ const left=all.slice().sort(()=>Math.random()-.5);const g={cur:null};root._game=g;btn.lastChild.textContent='Zopakuj slovo';
+ const stop=()=>{root.removeEventListener('click',onClick,true);root._game=null;btn.lastChild.textContent='Hra: nájdi obrázok'};
+ const next=()=>{if(!left.length){msg.textContent='Výborne, našli ste všetky obrázky!';say('Výborne! Našli ste všetky obrázky.');stop();return}g.cur=left.pop();msg.textContent='Počúvajte a nájdite obrázok.';setTimeout(()=>say('Nájdi: '+g.cur.dataset.say),120)};
+ const onClick=e=>{const b=e.target.closest('.pic');if(!b)return;e.stopPropagation();e.preventDefault();
+  if(b===g.cur){b.classList.add('ok');msg.textContent='Áno, '+b.dataset.say+'!';say('Áno! '+b.dataset.say);setTimeout(()=>{b.classList.remove('ok');next()},1500)}
+  else{b.classList.add('no');msg.textContent='Skúste ešte raz.';say('Skús ešte raz.');setTimeout(()=>b.classList.remove('no'),500)}};
+ root.addEventListener('click',onClick,true);next()}
 const R={
+ pics(d,c){const gs=d.groups.filter(g=>vis(g,c.level));
+  const grid=gs.map((g,gi)=>el('div',{class:'pgroup',style:'--c:'+W(gi*2)},gs.length>1?el('h4',{},g.t):null,el('div',{class:'pgrid'},g.items.filter(x=>vis(x,c.level)).map(x=>el('button',{type:'button',class:'pic','data-say':x.t,'aria-label':x.t},el('span',{class:'pimg',html:x.svg}),el('span',{class:'pcap'},x.t))))));
+  const root=el('div',{class:'dg pics'+(c.hide?' nocap':'')});
+  if(!c.sheet&&canSpeak()){const msg=el('span',{class:'pmsg',role:'status'},SPEECH.loaded&&!SPEECH.v?'Tento prehliadač nemá slovenský hlas, slová môžu znieť nezvyčajne.':'Ťuknite na obrázok a počúvajte slovo.');
+   const btn=el('button',{type:'button',class:'btn',onclick:()=>{if(!SPEECH.on){SPEECH.on=true;paintSpeak()}findGame(root,btn,msg)}},ic('sound',''),el('span',{},'Hra: nájdi obrázok'));root.append(el('div',{class:'pbar'},btn,msg))}
+  root.append(...grid);return root},
  scene(d,c){if(d.scene==='water')return waterScene(d,c);return aiScene(d,c)},
  mind(d,c){const b=d.branches.filter(x=>vis(x,c.level)),mid=Math.ceil(b.length/2),hub=node({t:d.center},c,'strong keep'),links=[];let h0=0;
   const col=list=>el('div',{class:'col'},list.map(x=>{const hue=h0++,h=node(x,c,'mid',hue),k=(x.kids||[]).filter(y=>vis(y,c.level));if(c.width>=560)links.push([hub,h,'h',W(hue)]);return el('div',{class:'branch'},h,el('div',{class:'kids'},k.map(y=>node(y,c,'',hue))))}));
@@ -340,7 +369,7 @@ function paintBrief(){
  for(const b of document.querySelectorAll('#samples .chip'))b.setAttribute('aria-pressed',b.dataset.k===S.key);
 }
 function paintRail(){
- const r=$('#rail'),rec=recOf(S.topic);r.replaceChildren(...FORMS.map(f=>{const has=!!S.topic.forms[f.id];
+ const r=$('#rail'),rec=recOf(S.topic);r.replaceChildren(...FORMS.filter(f=>f.id!=='pics'||S.topic.forms.pics).map(f=>{const has=!!S.topic.forms[f.id];
   return el('button',{type:'button',class:(has?'':'none ')+(f.id===rec?'rec':''),'aria-pressed':String(S.form===f.id),title:has?f.n:f.n+': pripraví AI',onclick(){S.form=f.id;paintAll()}},ic(f.ic,''),f.n)}));
 }
 function paintLevels(){
@@ -351,6 +380,8 @@ function paintLevels(){
 function flipSnap(){const m=new Map();document.querySelectorAll('#canvas .n[data-k]').forEach(n=>{if(!m.has(n.dataset.k))m.set(n.dataset.k,n.getBoundingClientRect())});return m}
 function flipPlay(m){settle();if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;let i=0;document.querySelectorAll('#canvas .n[data-k]').forEach(n=>{const a=m.get(n.dataset.k),b=n.getBoundingClientRect();if(a&&n.animate){n.animate([{translate:`${a.left-b.left}px ${a.top-b.top}px`},{translate:'0 0'}],{duration:620,easing:'cubic-bezier(.2,.85,.2,1)'})}else if(n.animate){n.animate([{opacity:0,scale:.7},{opacity:1,scale:1}],{duration:380,delay:Math.min(i++*35,420),easing:'ease-out',fill:'backwards'})}})}
 let flipT;function settle(){clearTimeout(flipT);flipT=setTimeout(()=>document.querySelectorAll('#canvas .dg').forEach(d=>{d.querySelector(':scope>.threads')?.classList.add('still');d._draw?.()}),1000)}
+function speakToggle(){const b=el('button',{type:'button',class:'linkbtn speak-tg',id:'speakTg','aria-pressed':String(SPEECH.on),onclick:()=>{SPEECH.on=!SPEECH.on;try{localStorage.setItem('klbko-hlas',SPEECH.on?'1':'0')}catch(e){}if(!SPEECH.on)try{speechSynthesis.cancel()}catch(e){}paintSpeak()}},ic('sound',''),el('span',{},''));paintSpeak(b);return b}
+function paintSpeak(b=document.getElementById('speakTg')){if(!b)return;b.setAttribute('aria-pressed',String(SPEECH.on));b.lastChild.textContent=SPEECH.on?'Čítanie nahlas: zapnuté (ťuknite na obrázok alebo popisku)':'Čítanie nahlas: vypnuté'}
 function paintCanvas(){
  const c=$('#canvas'),f=F[S.form],data=S.topic.forms[S.form],snap=flipSnap();
  c.querySelectorAll('.dg').forEach(d=>d._ro?.disconnect());
@@ -359,7 +390,9 @@ function paintCanvas(){
   const s=sample;c.replaceChildren(...head,el('p',{},`Podobu ${f.n} pre túto tému ešte nemáme.`),
    s?el('button',{class:'btn main',type:'button',onclick:()=>genForm(S.form)},'Pripraviť túto podobu cez AI'):'');return}
  const w=Math.max(200,c.clientWidth-36);
- if(S.hide&&!['cards','quiz','vvn'].includes(S.form))head.push(el('div',{class:'note-hide'},'Ťuknite na uzol a odkryte ho.'));
+ if(S.hide&&S.form==='pics')head.push(el('div',{class:'note-hide'},'Popisky sú skryté. Deti hádajú, čo je na obrázku.'));
+ else if(S.hide&&!['cards','quiz','vvn'].includes(S.form))head.push(el('div',{class:'note-hide'},'Ťuknite na uzol a odkryte ho.'));
+ if(isMS()&&canSpeak())head.push(speakToggle());
  c.replaceChildren(...head,renderForm(S.form,data,{level:S.level,hide:S.hide,width:w}));
  if(S.form==='scene'&&data.svg&&!document.body.classList.contains('student')){const ct=colorTools(data);if(ct)c.append(ct)}
  flipPlay(snap);
@@ -416,7 +449,7 @@ function openBoard(auto){
  function apply(){nodes.forEach((n,i)=>{n.classList.toggle('veil',i>=step);n.classList.toggle('now',i===step-1);n._pin?.classList.toggle('veil',i>=step)});stage.querySelectorAll('.scene').forEach(x=>x._lay?.());const cur=nodes[step-1];if(cur){const b=cur.querySelector('.tx b'),sm=cur.querySelector('.tx small');cap.replaceChildren(el('b',{},(b||cur.querySelector('.tx'))?.textContent||''),sm?el('span',{},sm.textContent):'');cap.hidden=false;cur.scrollIntoView?.({block:'nearest',behavior:'smooth'})}else cap.hidden=true;count.textContent=nodes.length?`${Math.min(step,nodes.length)} / ${nodes.length}`:'';stage.querySelectorAll('.dg').forEach(d=>d._draw?.());prevB.disabled=step<=0;nextB.disabled=step>=nodes.length}
  function build(reset){stage.querySelectorAll('.dg').forEach(d=>d._ro?.disconnect());
   const out=renderForm(S.form,data,{level:S.level,hide,width:Math.max(stage.clientWidth,window.innerWidth-40)});stage.replaceChildren(out);
-  nodes=[...stage.querySelectorAll('.n:not(.keep)')];if(reset)step=0;apply()}
+  nodes=[...stage.querySelectorAll('.n:not(.keep)')];if(reset)step=0;apply();if(!nodes.length)cap.hidden=true}
  const prevB=el('button',{class:'btn',type:'button',onclick(){if(step>0){step--;apply()}}},'Späť');
  const nextB=el('button',{class:'btn main',type:'button',onclick(){if(step<nodes.length){step++;apply()}}},'Ďalší uzol');
  const playB=el('button',{class:'btn',type:'button'},'Prehrať');
