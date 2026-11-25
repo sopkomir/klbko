@@ -509,6 +509,30 @@ async function loadPrep(id){
  if(!p?.t?.forms)return false;
  S.key='ulozena';S.topic={...p.t};if(!S.topic.notes){try{const n=localStorage.getItem('klbko-n-'+id);if(n)S.topic.notes=n}catch{}}S.form=p.f&&p.t.forms[p.f]?p.f:Object.keys(p.t.forms)[0];S.level=p.l||2;S.hide=false;savedId=id;savedFor=S.topic;dirty=false;paintAll();return true}
 const fmt=d=>{try{return new Date(d).toLocaleDateString('sk-SK',{day:'numeric',month:'numeric',year:'numeric'})}catch{return''}};
+function openReport(){
+ const t=S.topic||{},lv=(LEVELS.find(x=>x[0]===S.level)||[])[1]||'',fm=(F[S.form]||{}).n||'';
+ const ctx={topic:S.key||'',title:t.title||'',form:fm,level:lv,page:location.origin+location.pathname};
+ const kind=el('select',{id:'rKind'},[['obsah','Chyba v obsahu (nesprávny fakt, štandard, odpoveď)'],['zobrazenie','Chyba v zobrazení (tabuľa, tlač, mobil)'],['navrh','Návrh na zlepšenie'],['ine','Iné']].map(([v,n])=>el('option',{value:v},n)));
+ const text=el('textarea',{id:'rText',rows:6,maxlength:3000,placeholder:'Čo je zle a kde? Napríklad: v kvíze, 2. otázka, správna odpoveď má byť…',required:true});
+ const mail=el('input',{id:'rMail',type:'email',autocomplete:'email',placeholder:'nepovinné, ak chcete odpoveď'});
+ const hp=el('input',{name:'web',tabindex:'-1',autocomplete:'off','aria-hidden':'true',class:'hp'});
+ const msg=el('p',{class:'r-msg',role:'status'});
+ const send=el('button',{class:'btn main',type:'submit'},'Odoslať hlásenie');
+ const form=el('form',{class:'report'},
+  el('p',{class:'r-ctx'},'Téma: ',el('b',{},ctx.title||'žiadna'),ctx.title?` · ${fm} · ${lv}`:''),
+  el('label',{for:'rKind'},'Čoho sa hlásenie týka'),kind,
+  el('label',{for:'rText'},'Popis'),text,
+  el('label',{for:'rMail'},'E-mail'),mail,hp,
+  el('p',{class:'r-note'},'Spolu s hlásením sa odošle názov témy, podoba a úroveň. Poznámky o triede sa neodosielajú.'),
+  send,msg);
+ form.addEventListener('submit',async ev=>{ev.preventDefault();
+  if(text.value.trim().length<5){msg.textContent='Napíšte prosím aspoň krátky popis.';text.focus();return}
+  send.disabled=true;msg.textContent='Odosielam…';
+  try{const r=await fetch('/api/hlasenie',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:kind.value,text:text.value,email:mail.value,web:hp.value,ctx})});
+   if(!r.ok)throw new Error(String(r.status));
+   form.replaceChildren(el('h3',{},'Ďakujeme, hlásenie prišlo.'),el('p',{},'Pozrieme sa naň a opravu zapracujeme do ďalšej verzie.'),el('button',{class:'btn',type:'button',onclick:close},'Zavrieť'))}
+  catch(e){send.disabled=false;msg.textContent='Hlásenie sa nepodarilo odoslať. Skúste to prosím o chvíľu znova.'}});
+ const close=overlay('Nahlásiť chybu',el('div',{class:'sharebox lib'},form));setTimeout(()=>text.focus(),30)}
 function overlay(title,body){const close=()=>$('#ovRoot').replaceChildren();$('#ovRoot').replaceChildren(el('div',{class:'ov print',role:'dialog','aria-modal':'true','aria-label':title},el('div',{class:'bar noprint'},el('b',{},title),el('button',{class:'btn',type:'button',onclick:close},'Zavrieť')),body));return close}
 function linkBox(u,label){const inp=el('input',{readonly:true,value:u,'aria-label':label});return el('div',{class:'linkrow'},inp,el('button',{class:'btn',type:'button',onclick(ev){navigator.clipboard?.writeText(u).then(()=>{ev.target.textContent='Skopírované'}).catch(()=>inp.select())}},'Kopírovať'))}
 function openLibrary(){
@@ -676,7 +700,7 @@ function loadTopic(k){S.key=k;S.topic=TOPICS[k];S.form=recOf(S.topic);if(!S.topi
  if(!window.KLBKO_SHARE){paintAll();const m=new URLSearchParams(location.search).get('m');if(m)loadPrep(m).then(ok=>{if(!ok)setStatus('Uloženú prípravu sa nepodarilo nájsť.',true)})}
  $('#libBtn').append(ic('book',''),el('span',{class:'lbl-long'},'Moje prípravy'),el('span',{class:'lbl-short'},'Prípravy'));
  {const h=$('#howto');let seen=false;try{seen=localStorage.getItem('klbko-howto')==='1'}catch{}if(h&&!seen&&!document.body.classList.contains('student'))h.hidden=false;$('#howtoClose')?.addEventListener('click',()=>{h.hidden=true;try{localStorage.setItem('klbko-howto','1')}catch{}})}
-$('#libBtn').addEventListener('click',openLibrary);$('#saveBtn').append(ic('star',''),'Uložiť');$('#saveBtn').addEventListener('click',openSave);
+$('#libBtn').addEventListener('click',openLibrary);$('#reportBtn').append(ic('quiz',''),el('span',{class:'lbl-long'},'Nahlásiť chybu'),el('span',{class:'lbl-short'},'Chyba'));$('#reportBtn').addEventListener('click',openReport);$('#reportLine').addEventListener('click',openReport);$('#saveBtn').append(ic('star',''),'Uložiť');$('#saveBtn').addEventListener('click',openSave);
  if(window.KLBKO_SHARE)loadShare();
 })();
 
