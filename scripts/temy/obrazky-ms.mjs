@@ -1,6 +1,7 @@
 // Obrázky pre materskú školu. Každý obrázok je samostatné SVG 100×100 bez textu.
 // Kreslené jednoducho a výrazne, aby boli čitateľné aj z poslednej lavice.
 
+import K from './kresby.mjs';
 const O = '#37474f'; // obrys
 const svg = inner => `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
 const sun = (cx = 50, cy = 50, r = 22) => `<g stroke="#ffb300" stroke-width="6" stroke-linecap="round">${Array.from({ length: 8 }, (_, i) => { const a = i * Math.PI / 4, c = Math.cos(a), s = Math.sin(a); return `<path d="M${(cx + c * (r + 7)).toFixed(1)} ${(cy + s * (r + 7)).toFixed(1)}L${(cx + c * (r + 17)).toFixed(1)} ${(cy + s * (r + 17)).toFixed(1)}"/>`; }).join('')}</g><circle cx="${cx}" cy="${cy}" r="${r}" fill="#ffd54f"/>`;
@@ -27,6 +28,9 @@ const chick = `<g transform="translate(44 64) scale(1.85)"><circle r="15" fill="
 /* ---------- semafor, doprava ---------- */
 const light = red => svg(`<rect x="30" y="6" width="40" height="88" rx="10" fill="#263238"/><circle cx="50" cy="30" r="15" fill="${red ? '#e53935' : '#4e342e'}"/><circle cx="50" cy="70" r="15" fill="${red ? '#33402c' : '#43a047'}"/>${red ? '<g fill="#fff"><circle cx="50" cy="22" r="3"/><rect x="46" y="26" width="8" height="10" rx="2"/><rect x="46" y="35" width="3" height="7"/><rect x="51" y="35" width="3" height="7"/></g>' : '<g fill="#fff" stroke="#fff" stroke-linecap="round"><circle cx="52" cy="61" r="3" stroke="none"/><path d="M50 66l4 9M50 66l-3 6M54 75l-4 6M54 75l3 6M50 68l6 3" stroke-width="3" fill="none"/></g>'}`);
 
+// zvieratá z knižnice kresby.mjs, vpasované do 100×100 podľa zmeraného obrysu [x, y, šírka, výška]
+const fit = (g, [x, y, w, h]) => { const k = Math.min(88 / w, 84 / h); return svg(`<g transform="translate(${(50 - (x + w / 2) * k).toFixed(1)} ${(52 - (y + h / 2) * k).toFixed(1)}) scale(${k.toFixed(3)})">${g}</g>`); };
+
 export const OBR = {
   // počasie
   slnko: svg(sun()),
@@ -50,8 +54,10 @@ export const OBR = {
   kocka: svg(`<path d="M18 36h46v46h-46z" fill="#ffffff" stroke="${O}" stroke-width="3"/><path d="M18 36l18 -18h46l-18 18zM64 36l18 -18v46l-18 18z" fill="#e0e0e0" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><circle cx="30" cy="48" r="5" fill="${O}"/><circle cx="41" cy="59" r="5" fill="${O}"/><circle cx="52" cy="70" r="5" fill="${O}"/>`),
   valec: svg(`<path d="M24 22v56a26 9 0 0 0 52 0v-56" fill="#90caf9" stroke="${O}" stroke-width="3"/><ellipse cx="50" cy="22" rx="26" ry="9" fill="#bbdefb" stroke="${O}" stroke-width="3"/>`),
   // zvieratá
-  krava: svg(cow(0.52)), tela: svg(cow(0.4)), ovca: svg(sheep(0.66)), jahna: svg(sheep(0.52)),
-  svina: svg(pig(0.55)), prasiatko: svg(pig(0.42)), sliepka: svg(hen), kuriatko: svg(chick),
+  krava: fit(K.cow(), [-88, -138, 202, 152]), tela: fit(K.cow({ young: true }), [-60, -90, 137, 100]),
+  ovca: fit(K.sheep(), [-70, -110, 147, 121]), jahna: fit(K.sheep({ young: true }), [-46, -73, 97, 81]),
+  svina: fit(K.pig(), [-81, -110, 174, 122]), prasiatko: fit(K.pig({ young: true }), [-48, -66, 104, 74]),
+  sliepka: fit(K.hen(), [-54, -108, 104, 115]), kuriatko: fit(K.chick(), [-18, -57, 47, 62]),
   // ulica
   stoj: light(true), chod: light(false),
   priechod: svg(`<rect x="4" y="20" width="92" height="60" fill="#546e7a"/><g fill="#fafafa">${[0, 1, 2, 3, 4].map(i => `<rect x="${12 + i * 16}" y="24" width="9" height="52"/>`).join('')}</g>`),

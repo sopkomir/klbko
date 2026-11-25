@@ -22,9 +22,16 @@ const SHAPE = {
 };
 const errs = [];
 const topics = [];
+// prerobené scény z knižnice kresieb
+const NOVE = (await import(pathToFileURL(path.join(dir, 'sceny-nove.mjs')).href)).default;
 for (const f of fs.readdirSync(dir).filter(f => /^\d+-.*\.mjs$/.test(f)).sort()) {
   const list = (await import(pathToFileURL(path.join(dir, f)).href)).default;
   for (const t of list) {
+    const nova = NOVE[t.id];
+    if (nova && t.forms?.scene) {
+      t.forms.scene = { ...t.forms.scene, svg: nova.svg };
+      for (const [name, [x, y]] of Object.entries(nova.pts || {})) { const p = t.forms.scene.points.find(q => q.t === name); if (!p) errs.push(`${f}:${t.id}: nová scéna posúva neznámy bod ${name}`); else Object.assign(p, { x, y }); }
+    }
     const at = `${f}:${t.id}`;
     for (const k of ['id', 'title', 'subject', 'grade', 'kind', 'rec', 'why', 'alts', 'std', 'method', 'guide', 'forms']) if (t[k] === undefined) errs.push(`${at}: chýba ${k}`);
     if (!KIND[t.kind]) errs.push(`${at}: zlý kind ${t.kind}`);

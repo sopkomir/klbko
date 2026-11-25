@@ -255,10 +255,18 @@ function aiScene(d,c){const lv=c.level,pts=d.points.filter(x=>vis(x,lv)),svg=cle
 /* ---------- čítanie nahlas (materská škola) ---------- */
 const SPEECH={on:true,v:null,loaded:false};
 try{SPEECH.on=localStorage.getItem('klbko-hlas')!=='0'}catch(e){}
-const canSpeak=()=>typeof window!=='undefined'&&'speechSynthesis' in window&&'SpeechSynthesisUtterance' in window;
+const canSpeak=()=>typeof window!=='undefined'&&('Audio' in window||'speechSynthesis' in window);
 function pickVoice(){try{const vs=speechSynthesis.getVoices();if(!vs.length)return;SPEECH.loaded=true;SPEECH.v=vs.find(v=>/^sk/i.test(v.lang))||vs.find(v=>/^cs/i.test(v.lang))||null}catch(e){}}
 if(canSpeak()){pickVoice();try{speechSynthesis.addEventListener('voiceschanged',pickVoice)}catch(e){}}
-function say(t){if(!canSpeak()||!SPEECH.on||!t)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t));u.lang=SPEECH.v?.lang||'sk-SK';if(SPEECH.v)u.voice=SPEECH.v;u.rate=.85;speechSynthesis.speak(u)}catch(e){}}
+function sayLocal(t){if(!('speechSynthesis' in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t));u.lang=SPEECH.v?.lang||'sk-SK';if(SPEECH.v)u.voice=SPEECH.v;u.rate=.85;speechSynthesis.speak(u)}catch(e){}}
+// Prednostne nahrávka zo servera (externý slovenský hlas), inak hlas prehliadača.
+function say(t){if(!SPEECH.on||!t)return;t=String(t).replace(/\s+/g,' ').trim().slice(0,200);
+ try{SPEECH.audio?.pause()}catch(e){}try{speechSynthesis?.cancel()}catch(e){}
+ if(SPEECH.ext===false){sayLocal(t);return}
+ const a=new Audio('/api/hlas?t='+encodeURIComponent(t));SPEECH.audio=a;let done=false;
+ const fb=()=>{if(done)return;done=true;if(SPEECH.ext!==true)SPEECH.ext=false;if(SPEECH.audio===a)sayLocal(t)};
+ a.addEventListener('error',fb);a.addEventListener('playing',()=>{done=true;SPEECH.ext=true});
+ a.play().catch(fb)}
 const isMS=()=>!!S.topic&&+S.topic.grade===0;
 document.addEventListener('click',e=>{if(!isMS()||!SPEECH.on)return;const t=e.target.closest?.('[data-say],.pin,.strip .n,.card');if(!t||t.closest('.sheet'))return;
  const txt=t.dataset.say||(t.classList.contains('card')?t.querySelector('span')?.textContent:t.classList.contains('pin')?t.querySelector('span')?.textContent:t.querySelector('b')?.textContent);
@@ -276,7 +284,7 @@ const R={
  pics(d,c){const gs=d.groups.filter(g=>vis(g,c.level));
   const grid=gs.map((g,gi)=>el('div',{class:'pgroup',style:'--c:'+W(gi*2)},gs.length>1?el('h4',{},g.t):null,el('div',{class:'pgrid'},g.items.filter(x=>vis(x,c.level)).map(x=>el('button',{type:'button',class:'pic','data-say':x.t,'aria-label':x.t},el('span',{class:'pimg',html:x.svg}),el('span',{class:'pcap'},x.t))))));
   const root=el('div',{class:'dg pics'+(c.hide?' nocap':'')});
-  if(!c.sheet&&canSpeak()){const msg=el('span',{class:'pmsg',role:'status'},SPEECH.loaded&&!SPEECH.v?'Tento prehliadač nemá slovenský hlas, slová môžu znieť nezvyčajne.':'Ťuknite na obrázok a počúvajte slovo.');
+  if(!c.sheet&&canSpeak()){const msg=el('span',{class:'pmsg',role:'status'},'Ťuknite na obrázok a počúvajte slovo.');
    const btn=el('button',{type:'button',class:'btn',onclick:()=>{if(!SPEECH.on){SPEECH.on=true;paintSpeak()}findGame(root,btn,msg)}},ic('sound',''),el('span',{},'Hra: nájdi obrázok'));root.append(el('div',{class:'pbar'},btn,msg))}
   root.append(...grid);return root},
  scene(d,c){if(d.scene==='water')return waterScene(d,c);return aiScene(d,c)},
@@ -380,7 +388,7 @@ function paintLevels(){
 function flipSnap(){const m=new Map();document.querySelectorAll('#canvas .n[data-k]').forEach(n=>{if(!m.has(n.dataset.k))m.set(n.dataset.k,n.getBoundingClientRect())});return m}
 function flipPlay(m){settle();if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;let i=0;document.querySelectorAll('#canvas .n[data-k]').forEach(n=>{const a=m.get(n.dataset.k),b=n.getBoundingClientRect();if(a&&n.animate){n.animate([{translate:`${a.left-b.left}px ${a.top-b.top}px`},{translate:'0 0'}],{duration:620,easing:'cubic-bezier(.2,.85,.2,1)'})}else if(n.animate){n.animate([{opacity:0,scale:.7},{opacity:1,scale:1}],{duration:380,delay:Math.min(i++*35,420),easing:'ease-out',fill:'backwards'})}})}
 let flipT;function settle(){clearTimeout(flipT);flipT=setTimeout(()=>document.querySelectorAll('#canvas .dg').forEach(d=>{d.querySelector(':scope>.threads')?.classList.add('still');d._draw?.()}),1000)}
-function speakToggle(){const b=el('button',{type:'button',class:'linkbtn speak-tg',id:'speakTg','aria-pressed':String(SPEECH.on),onclick:()=>{SPEECH.on=!SPEECH.on;try{localStorage.setItem('klbko-hlas',SPEECH.on?'1':'0')}catch(e){}if(!SPEECH.on)try{speechSynthesis.cancel()}catch(e){}paintSpeak()}},ic('sound',''),el('span',{},''));paintSpeak(b);return b}
+function speakToggle(){const b=el('button',{type:'button',class:'linkbtn speak-tg',id:'speakTg','aria-pressed':String(SPEECH.on),onclick:()=>{SPEECH.on=!SPEECH.on;try{localStorage.setItem('klbko-hlas',SPEECH.on?'1':'0')}catch(e){}if(!SPEECH.on){try{speechSynthesis.cancel()}catch(e){}try{SPEECH.audio?.pause()}catch(e){}}paintSpeak()}},ic('sound',''),el('span',{},''));paintSpeak(b);return b}
 function paintSpeak(b=document.getElementById('speakTg')){if(!b)return;b.setAttribute('aria-pressed',String(SPEECH.on));b.lastChild.textContent=SPEECH.on?'Čítanie nahlas: zapnuté (ťuknite na obrázok alebo popisku)':'Čítanie nahlas: vypnuté'}
 function paintCanvas(){
  const c=$('#canvas'),f=F[S.form],data=S.topic.forms[S.form],snap=flipSnap();
